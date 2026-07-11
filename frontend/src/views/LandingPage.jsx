@@ -1,5 +1,5 @@
 import React from 'react';
-import { Rocket, ArrowRight, Sparkles, Store, CheckCircle, TrendingUp, Cpu, Database } from 'lucide-react';
+import { Rocket, ArrowRight, Sparkles, Store, CheckCircle, TrendingUp, Brain, Calculator, MessageSquare, Layers } from 'lucide-react';
 
 export default function LandingPage({ setActiveTab }) {
   return (
@@ -94,35 +94,61 @@ export default function LandingPage({ setActiveTab }) {
       {/* Features Section (Bento Grid) */}
       <section className="space-y-8">
         <div className="text-center space-y-3">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">Arsitektur Modern & Performa Tinggi</h2>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900">Fitur Unggulan Pintar & Terintegrasi</h2>
           <p className="text-sm text-slate-500 max-w-xl mx-auto">
-            Dibangun dengan teknologi terdepan untuk memastikan analisis yang cepat, akurat, dan aman bagi bisnis Anda.
+            Segala alat yang Anda butuhkan untuk memvalidasi ide usaha dan mensimulasikan rencana keuangan dalam satu platform digital.
           </p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Bento Item 1 */}
+          {/* Bento Item 1: AI Analysis */}
           <div className="apple-glass rounded-3xl p-6 md:p-8 md:col-span-2 text-left flex items-start gap-4 hover:shadow-lg transition-all duration-300">
             <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center flex-shrink-0 text-blue-600">
-              <Cpu className="w-6 h-6" />
+              <Brain className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Decoupled FastAPI & React</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Validasi Ide Bisnis AI</h3>
               <p className="text-sm text-slate-500 leading-relaxed">
-                Pemisahan backend (FastAPI) dan frontend (React Vite) memastikan pemrosesan data instan. FastAPI menangani logika finansial berat dan integrasi AI, sementara React menyajikan visualisasi UI yang mulus, stabil, dan responsif.
+                AI Validator mengevaluasi kekuatan ide bisnis Anda secara makro dan mikro. Dapatkan skor kelayakan, ketahui potensi risiko operasional sejak awal, serta peroleh saran taktis diferensiasi pasar secara langsung.
               </p>
             </div>
           </div>
           
-          {/* Bento Item 2 */}
+          {/* Bento Item 2: Financial Calculator */}
           <div className="apple-glass rounded-3xl p-6 md:p-8 text-left flex flex-col gap-4 hover:shadow-lg transition-all duration-300">
             <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600">
-              <Database className="w-6 h-6" />
+              <Calculator className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Data Real-time</h3>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Simulasi Finansial Presisi</h3>
               <p className="text-sm text-slate-500 leading-relaxed">
-                Platform mengintegrasikan referensi harga pangan nasional untuk mendukung keputusan pengadaan bahan baku yang akurat dan up-to-date.
+                Estimasi biaya HPP, Break-Even Point (BEP), margin kotor, hingga visualisasi interaktif perpotongan grafik ROI bulanan secara mandiri.
+              </p>
+            </div>
+          </div>
+
+          {/* Bento Item 3: Price Monitoring */}
+          <div className="apple-glass rounded-3xl p-6 md:p-8 text-left flex flex-col gap-4 hover:shadow-lg transition-all duration-300">
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center text-blue-600">
+              <Layers className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Pantau Harga Bahan Pokok</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Akses komoditas pangan pokok ter-update nasional secara berkala untuk estimasi belanja produksi harian yang realistis.
+              </p>
+            </div>
+          </div>
+
+          {/* Bento Item 4: Forum Terbuka */}
+          <div className="apple-glass rounded-3xl p-6 md:p-8 md:col-span-2 text-left flex items-start gap-4 hover:shadow-lg transition-all duration-300">
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center flex-shrink-0 text-blue-600">
+              <MessageSquare className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Forum Diskusi Terbuka</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Berbagilah ide, cari solusi permasalahan bisnis wirausaha, dan bangun jaringan kemitraan bersama wirausaha lainnya dalam komunitas yang suportif.
               </p>
             </div>
           </div>
