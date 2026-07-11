@@ -1,11 +1,16 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { ToastProvider } from '../components/Toast';
 import Calculator from './Calculator';
 
 describe('Calculator Component', () => {
   it('calculates daily net profit correctly', () => {
-    render(<Calculator calculationData={null} setCalculationData={() => {}} />);
+    render(
+      <ToastProvider>
+        <Calculator calculationData={null} setCalculationData={() => {}} />
+      </ToastProvider>
+    );
     
     // Check initial inputs
     const revenueInput = screen.getByLabelText('Perkiraan Penjualan Harian (Rupiah)');

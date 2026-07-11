@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, ThumbsUp, Plus, Search, Filter, MessageCircle, User, Calendar, Tag, ArrowLeft } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Plus, Search, MessageCircle, User, ArrowLeft, X } from 'lucide-react';
 
 const INITIAL_THREADS = [
   {
@@ -46,11 +46,10 @@ export default function ForumTerbuka() {
   const [threads, setThreads] = useState(INITIAL_THREADS);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Semua');
-  const [activeThread, setActiveThread] = useState(null); // Selected thread for details
+  const [activeThread, setActiveThread] = useState(null);
   const [newComment, setNewComment] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   
-  // New Thread Form State
   const [newThreadForm, setNewThreadForm] = useState({
     title: '',
     category: 'Kuliner',
@@ -128,13 +127,13 @@ export default function ForumTerbuka() {
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
         <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Forum Terbuka UMKM</h2>
-          <p className="text-sm text-slate-500 mt-1">Diskusikan ide bisnis Anda, harga komoditas pokok, dan strategi finansial bersama pelaku usaha lain.</p>
+          <h2 className="text-2xl font-extrabold text-[#171C38] tracking-tight">Forum Terbuka UMKM</h2>
+          <p className="text-sm text-[#6F7178] mt-1">Diskusikan ide bisnis Anda, harga komoditas pokok, dan strategi finansial bersama pelaku usaha lain.</p>
         </div>
         {!activeThread && (
           <button
             onClick={() => setModalOpen(true)}
-            className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-6 py-3.5 rounded-2xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-2"
+            className="btn-primary text-sm px-6 py-3.5 flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             <span>Mulai Diskusi</span>
@@ -142,51 +141,53 @@ export default function ForumTerbuka() {
         )}
       </header>
 
+      <div className="absolute top-40 left-0 w-80 h-80 bg-[#FF6B1A]/5 rounded-full blur-3xl -z-10 animate-float" />
+
       {activeThread ? (
         /* THREAD DETAIL VIEW */
         <div className="space-y-6 w-full animate-scale-in">
           <button 
             onClick={() => setActiveThread(null)}
-            className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-bold text-[#6F7178] hover:text-[#FF6B1A] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Kembali ke Forum</span>
           </button>
 
-          <div className="apple-glass rounded-3xl p-6 md:p-8 border border-white/50 shadow-sm space-y-6 w-full">
+          <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 md:p-8 space-y-6 w-full">
             {/* Thread Owner */}
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border border-blue-200">
+                <div className="w-10 h-10 rounded-full bg-[#FF6B1A]/10 flex items-center justify-center text-[#FF6B1A] border border-[#FF6B1A]/20">
                   <User className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-slate-800">{activeThread.author}</span>
-                    <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase border border-blue-100">{activeThread.authorBadge}</span>
+                    <span className="font-bold text-sm text-[#171C38]">{activeThread.author}</span>
+                    <span className="text-[9px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-2 py-0.5 rounded-full uppercase border border-[#FF6B1A]/20">{activeThread.authorBadge}</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-semibold">{activeThread.date}</span>
+                  <span className="text-[10px] text-[#6F7178] font-semibold">{activeThread.date}</span>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border px-3 py-1 rounded-full">{activeThread.category}</span>
+              <span className="text-[10px] font-bold text-[#6F7178] bg-[#F8ECD2]/50 border border-[#E8E8E8] px-3 py-1 rounded-full">{activeThread.category}</span>
             </div>
 
             {/* Thread Title & Content */}
             <div className="space-y-3">
-              <h3 className="text-lg md:text-xl font-extrabold text-slate-900 leading-snug">{activeThread.title}</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">{activeThread.snippet}</p>
+              <h3 className="text-lg md:text-xl font-extrabold text-[#171C38] leading-snug">{activeThread.title}</h3>
+              <p className="text-sm text-[#6F7178] leading-relaxed">{activeThread.snippet}</p>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-4 pt-4 border-t border-slate-200/50">
+            <div className="flex items-center gap-4 pt-4 border-t border-[#E8E8E8]/50">
               <button 
                 onClick={(e) => handleLike(activeThread.id, e)}
-                className="flex items-center gap-1.5 text-slate-500 hover:text-blue-600 transition-colors text-xs font-bold"
+                className="flex items-center gap-1.5 text-[#6F7178] hover:text-[#FF6B1A] transition-colors text-xs font-bold"
               >
                 <ThumbsUp className="w-4 h-4" />
                 <span>{activeThread.likes} Suka</span>
               </button>
-              <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
+              <div className="flex items-center gap-1.5 text-[#6F7178] text-xs font-bold">
                 <MessageCircle className="w-4 h-4" />
                 <span>{activeThread.replies.length} Komentar</span>
               </div>
@@ -195,36 +196,36 @@ export default function ForumTerbuka() {
 
           {/* Comments List */}
           <div className="space-y-4 w-full">
-            <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider pl-1">Tanggapan ({activeThread.replies.length})</h4>
+            <h4 className="text-sm font-bold text-[#171C38] uppercase tracking-wider pl-1">Tanggapan ({activeThread.replies.length})</h4>
             
             {activeThread.replies.map((reply) => (
-              <div key={reply.id} className="bg-white/60 backdrop-blur-md rounded-2xl p-5 border border-slate-200/50 shadow-sm flex items-start gap-4 text-left w-full">
-                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border flex-shrink-0">
+              <div key={reply.id} className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-5 flex items-start gap-4 text-left w-full">
+                <div className="w-8 h-8 rounded-full bg-[#F8ECD2]/50 flex items-center justify-center text-[#6F7178] border border-[#E8E8E8] flex-shrink-0">
                   <User className="w-4 h-4" />
                 </div>
                 <div className="space-y-1.5 flex-grow">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-slate-800">{reply.author}</span>
-                    <span className="text-[8px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase">{reply.badge}</span>
-                    <span className="text-[10px] text-slate-400 ml-auto">{reply.date}</span>
+                    <span className="font-bold text-xs text-[#171C38]">{reply.author}</span>
+                    <span className="text-[8px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-2 py-0.5 rounded-full uppercase">{reply.badge}</span>
+                    <span className="text-[10px] text-[#6F7178] ml-auto">{reply.date}</span>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">{reply.text}</p>
+                  <p className="text-xs text-[#6F7178] leading-relaxed">{reply.text}</p>
                 </div>
               </div>
             ))}
 
             {/* Post Comment Input */}
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-4 border border-slate-200/50 shadow-sm flex gap-4 items-center w-full">
+            <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-4 flex gap-4 items-center w-full">
               <input 
                 type="text"
                 placeholder="Tulis tanggapan atau saran finansial..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="flex-grow bg-slate-50 border border-slate-200 focus:outline-none focus:border-blue-600 rounded-xl p-3 text-xs font-medium"
+                className="flex-grow bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-medium focus-ring"
               />
               <button 
                 onClick={handleAddComment}
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-5 py-3 rounded-xl active:scale-95 transition-all"
+                className="btn-primary text-xs px-5 py-3"
               >
                 Kirim
               </button>
@@ -236,30 +237,30 @@ export default function ForumTerbuka() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
           {/* Left Side: Filter and Search */}
           <div className="lg:col-span-3 space-y-6 w-full">
-            <div className="apple-glass rounded-2xl p-5 border border-white/50 shadow-sm space-y-4 text-left w-full">
-              <h3 className="font-bold text-xs text-slate-500 uppercase tracking-wider">Cari & Saring</h3>
+            <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-5 space-y-4 text-left w-full">
+              <h3 className="font-bold text-xs text-[#6F7178] uppercase tracking-wider">Cari & Saring</h3>
               
               <div className="relative w-full">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6F7178]" />
                 <input 
                   type="text"
                   placeholder="Cari topik..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 focus:outline-none focus:border-blue-600 rounded-xl text-xs font-semibold placeholder:text-slate-400"
+                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl text-xs font-semibold placeholder:text-[#6F7178] focus-ring"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-2">Kategori</label>
+                <label className="block text-[10px] font-bold text-[#6F7178] uppercase mb-2">Kategori</label>
                 {categories.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setCategory(cat)}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all press-sm ${
                       category === cat
-                        ? 'bg-blue-50 text-blue-700 font-bold border-l-2 border-blue-600'
-                        : 'text-slate-500 hover:bg-slate-50'
+                        ? 'bg-[#FF6B1A]/10 text-[#FF6B1A] font-bold border-l-2 border-[#FF6B1A]'
+                        : 'text-[#6F7178] hover:bg-[#F8ECD2]/50'
                     }`}
                   >
                     {cat}
@@ -271,30 +272,30 @@ export default function ForumTerbuka() {
 
           {/* Right Side: Threads List */}
           <div className="lg:col-span-9 space-y-4 w-full">
-            {filteredThreads.map((thread) => (
+            {filteredThreads.map((thread, i) => (
               <div 
                 key={thread.id}
                 onClick={() => setActiveThread(thread)}
-                className="apple-glass rounded-2xl p-6 border border-white/50 shadow-sm hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col gap-4 text-left w-full group"
+                className={`bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 hover:-translate-y-1 hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col gap-4 text-left w-full group card-lift press animate-slide-up delay-${Math.min(i + 1, 8)}`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-xs text-slate-800">{thread.author}</span>
-                    <span className="text-[9px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{thread.authorBadge}</span>
-                    <span className="text-[10px] text-slate-400 font-medium ml-2">{thread.date}</span>
+                    <span className="font-bold text-xs text-[#171C38]">{thread.author}</span>
+                    <span className="text-[9px] font-semibold text-[#FF6B1A] bg-[#FF6B1A]/10 px-2 py-0.5 rounded-full">{thread.authorBadge}</span>
+                    <span className="text-[10px] text-[#6F7178] font-medium ml-2">{thread.date}</span>
                   </div>
-                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 border px-2.5 py-0.5 rounded-full">{thread.category}</span>
+                  <span className="text-[10px] font-bold text-[#6F7178] bg-[#F8ECD2]/50 border border-[#E8E8E8] px-2.5 py-0.5 rounded-full">{thread.category}</span>
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="font-extrabold text-sm md:text-base text-slate-900 group-hover:text-blue-600 transition-colors leading-snug">{thread.title}</h3>
-                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{thread.snippet}</p>
+                  <h3 className="font-extrabold text-sm md:text-base text-[#171C38] group-hover:text-[#FF6B1A] transition-colors leading-snug">{thread.title}</h3>
+                  <p className="text-xs text-[#6F7178] line-clamp-2 leading-relaxed">{thread.snippet}</p>
                 </div>
 
-                <div className="flex items-center gap-4 pt-3 border-t border-slate-200/40 text-[11px] font-bold text-slate-500">
+                <div className="flex items-center gap-4 pt-3 border-t border-[#E8E8E8]/40 text-[11px] font-bold text-[#6F7178]">
                   <button 
                     onClick={(e) => handleLike(thread.id, e)}
-                    className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                    className="flex items-center gap-1 hover:text-[#FF6B1A] transition-colors"
                   >
                     <ThumbsUp className="w-3.5 h-3.5" />
                     <span>{thread.likes} Suka</span>
@@ -308,10 +309,10 @@ export default function ForumTerbuka() {
             ))}
 
             {filteredThreads.length === 0 && (
-              <div className="bg-slate-100/50 border border-slate-200 border-dashed rounded-3xl py-12 text-center text-slate-400">
+              <div className="bg-[#F8ECD2]/30 border border-[#E8E8E8] border-dashed rounded-3xl py-12 text-center text-[#6F7178]">
                 <MessageSquare className="w-12 h-12 mx-auto mb-2 stroke-[1.5]" />
-                <h4 className="font-bold text-sm text-slate-700">Diskusi Tidak Ditemukan</h4>
-                <p className="text-xs text-slate-400 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
+                <h4 className="font-bold text-sm text-[#171C38]">Diskusi Tidak Ditemukan</h4>
+                <p className="text-xs text-[#6F7178] mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
               </div>
             )}
           </div>
@@ -320,13 +321,13 @@ export default function ForumTerbuka() {
 
       {/* CREATE THREAD MODAL */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md animate-fade-in">
-          <div className="bg-white/80 border border-white/60 shadow-2xl rounded-3xl p-6 md:p-8 backdrop-blur-2xl w-full max-w-lg animate-scale-in text-left">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171C38]/60 animate-fade-in">
+          <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-xl w-full max-w-lg animate-scale-in text-left p-6 md:p-8">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-slate-900">Mulai Diskusi Baru</h3>
+              <h3 className="text-lg font-bold text-[#171C38]">Mulai Diskusi Baru</h3>
               <button 
                 onClick={() => setModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+                className="text-[#6F7178] hover:text-[#171C38] p-1 rounded-full hover:bg-[#F8ECD2]/50 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -334,23 +335,23 @@ export default function ForumTerbuka() {
 
             <form onSubmit={handleCreateThread} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">Judul Diskusi</label>
+                <label className="block text-xs font-bold text-[#6F7178] mb-1.5">Judul Diskusi</label>
                 <input 
                   type="text"
                   required
                   placeholder="Contoh: Bagaimana tips menjaga kualitas bahan baku sayur agar tidak layu?"
                   value={newThreadForm.title}
                   onChange={(e) => setNewThreadForm({ ...newThreadForm, title: e.target.value })}
-                  className="w-full bg-white border border-slate-200 focus:outline-none focus:border-blue-600 rounded-xl p-3 text-xs font-semibold"
+                  className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-semibold focus-ring"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">Kategori</label>
+                <label className="block text-xs font-bold text-[#6F7178] mb-1.5">Kategori</label>
                 <select
                   value={newThreadForm.category}
                   onChange={(e) => setNewThreadForm({ ...newThreadForm, category: e.target.value })}
-                  className="w-full bg-white border border-slate-200 focus:outline-none focus:border-blue-600 rounded-xl p-3 text-xs font-semibold"
+                  className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-semibold focus-ring"
                 >
                   {categories.slice(1).map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -359,20 +360,20 @@ export default function ForumTerbuka() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">Deskripsi Lengkap Pertanyaan/Ide</label>
+                <label className="block text-xs font-bold text-[#6F7178] mb-1.5">Deskripsi Lengkap Pertanyaan/Ide</label>
                 <textarea 
                   rows="5"
                   required
                   placeholder="Ceritakan permasalahan, konteks usaha Anda, atau informasi detail yang ingin Anda tanyakan..."
                   value={newThreadForm.snippet}
                   onChange={(e) => setNewThreadForm({ ...newThreadForm, snippet: e.target.value })}
-                  className="w-full bg-white border border-slate-200 focus:outline-none focus:border-blue-600 rounded-xl p-4 text-xs font-semibold resize-none"
+                  className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-4 text-xs font-semibold resize-none focus-ring"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white rounded-xl py-3 font-bold text-xs hover:shadow-lg shadow-blue-500/10 hover:-translate-y-0.5 active:scale-98 transition-all duration-300"
+                className="w-full btn-primary text-xs py-3"
               >
                 Publikasikan Topik Diskusi
               </button>
@@ -384,24 +385,4 @@ export default function ForumTerbuka() {
   );
 }
 
-// Simple Helper Component to close Modal
-function X({ className, ...props }) {
-  return (
-    <svg 
-      className={className} 
-      {...props} 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-    >
-      <line x1="18" y1="6" x2="6" y2="18"></line>
-      <line x1="6" y1="6" x2="18" y2="18"></line>
-    </svg>
-  );
-}
+

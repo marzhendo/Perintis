@@ -1,66 +1,76 @@
 import React from 'react';
-import logo from '../assets/images/Perintis_OLD.svg';
+import logo from '../assets/images/Perintis.svg';
 
 export default function Footer({ setActiveTab }) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="mt-20 border-t border-slate-200/50 bg-white/40 backdrop-blur-xl py-12 px-6 md:px-12 w-full text-slate-500 text-xs text-left">
-      <div className="max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 mb-10">
-        
+    <footer className="bg-white rounded-t-3xl pt-12 pb-8 px-6 md:px-12 w-full shadow-[0_-4px_20px_rgba(23,28,56,0.04)]">
+      <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 mb-10">
+
         {/* Column 1: Brand Info */}
         <div className="md:col-span-5 space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden p-0.5">
-              <img src={logo} alt="Perintis Logo" className="w-full h-full object-contain" />
+          <button onClick={() => setActiveTab('home')} className="flex items-center gap-3 hover:opacity-80 active:scale-95 transition-all press">
+            <div className="w-10 h-10 rounded-full overflow-hidden bg-white shadow-sm">
+              <img src={logo} alt="Perintis" className="w-full h-full object-cover" />
             </div>
-            <span className="font-extrabold text-base bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <span className="font-bold text-lg text-[#171C38]" style={{ fontFamily: "'Playfair Display', serif" }}>
               Perintis
             </span>
-          </div>
-          <p className="text-[11px] leading-relaxed text-slate-400 max-w-sm">
+          </button>
+          <p className="text-xs leading-relaxed text-[#6F7178] max-w-sm" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             Platform intelijen bisnis digital & simulasi finansial terintegrasi untuk calon pelaku usaha mikro, kecil, dan menengah di Indonesia. Bangun fondasi usahamu berbasis data.
           </p>
         </div>
 
-        {/* Column 2: Quick Links */}
+        {/* Column 2: Navigasi */}
         <div className="md:col-span-3 space-y-3">
-          <h4 className="font-bold text-slate-800 text-[10px] uppercase tracking-wider">Akses Navigasi</h4>
-          <ul className="space-y-2 font-semibold">
+          <h4 className="font-bold text-[#171C38] text-[10px] uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Navigasi</h4>
+          <ul className="space-y-2.5">
             <li>
-              <button onClick={() => setActiveTab('home')} className="hover:text-blue-600 transition-colors">
+              <button onClick={() => setActiveTab('home')} className="text-[#6F7178] hover:text-[#171C38] transition-colors text-xs font-medium press">
                 Halaman Utama
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveTab('harga')} className="hover:text-blue-600 transition-colors">
+              <button onClick={() => setActiveTab('harga')} className="text-[#6F7178] hover:text-[#171C38] transition-colors text-xs font-medium press">
                 Pantau Harga
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveTab('guide')} className="hover:text-blue-600 transition-colors">
+              <button onClick={() => setActiveTab('lokasi')} className="text-[#6F7178] hover:text-[#171C38] transition-colors text-xs font-medium press">
+                Peta Lokasi
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setActiveTab('guide')} className="text-[#6F7178] hover:text-[#171C38] transition-colors text-xs font-medium press">
                 Buku Panduan
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setActiveTab('notifikasi')} className="text-[#6F7178] hover:text-[#171C38] transition-colors text-xs font-medium press">
+                Notifikasi
               </button>
             </li>
           </ul>
         </div>
 
-        {/* Column 3: Features */}
+        {/* Column 3: Fitur */}
         <div className="md:col-span-4 space-y-3">
-          <h4 className="font-bold text-slate-800 text-[10px] uppercase tracking-wider">Fitur Analisis</h4>
-          <ul className="space-y-2 font-semibold">
+          <h4 className="font-bold text-[#171C38] text-[10px] uppercase tracking-wider" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Fitur</h4>
+          <ul className="space-y-2.5">
             <li>
-              <button onClick={() => setActiveTab('validator')} className="hover:text-blue-600 transition-colors">
+              <button onClick={() => setActiveTab('validator')} className="text-[#6F7178] hover:text-[#171C38] transition-colors text-xs font-medium text-left press">
                 Validasi Ide Bisnis AI
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveTab('calculator')} className="hover:text-blue-600 transition-colors">
+              <button onClick={() => setActiveTab('calculator')} className="text-[#6F7178] hover:text-[#171C38] transition-colors text-xs font-medium press">
                 Kalkulator BEP & HPP
               </button>
             </li>
             <li>
-              <button onClick={() => setActiveTab('forum')} className="hover:text-blue-600 transition-colors text-left">
+              <button onClick={() => setActiveTab('forum')} className="text-[#6F7178] hover:text-[#171C38] transition-colors text-xs font-medium text-left press">
                 Forum Diskusi Terbuka
               </button>
             </li>
@@ -70,11 +80,11 @@ export default function Footer({ setActiveTab }) {
       </div>
 
       {/* Bottom Row */}
-      <div className="max-w-[1280px] mx-auto border-t border-slate-200/40 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] text-slate-400 font-medium">
+      <div className="max-w-[1200px] mx-auto border-t border-[#E8E8E8] pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] text-[#6F7178] font-medium">
         <span>© {currentYear} Perintis. Dibuat dengan bangga untuk UMKM Indonesia.</span>
         <div className="flex gap-6">
-          <a href="#" className="hover:text-slate-600">Kebijakan Privasi</a>
-          <a href="#" className="hover:text-slate-600">Ketentuan Layanan</a>
+          <button onClick={() => setActiveTab('privacy')} className="hover:text-[#171C38] transition-colors press-sm">Kebijakan Privasi</button>
+          <button onClick={() => setActiveTab('terms')} className="hover:text-[#171C38] transition-colors press-sm">Ketentuan Layanan</button>
         </div>
       </div>
     </footer>

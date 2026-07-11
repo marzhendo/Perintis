@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
+import ErrorBoundary from './components/ErrorBoundary';
+import MobileProfileDropdown from './components/MobileProfileDropdown';
+import { ToastProvider } from './components/Toast';
+import useTabRouting from './hooks/useTabRouting';
+import useUser from './hooks/useUser';
+import useAppData from './hooks/useAppData';
+import logo from './assets/images/Perintis.svg';
+import { Bell } from 'lucide-react';
 import LandingPage from './views/LandingPage';
 import HargaPangan from './views/HargaPangan';
 import Validator from './views/Validator';
@@ -10,158 +18,77 @@ import Calculator from './views/Calculator';
 import ForumTerbuka from './views/ForumTerbuka';
 import ROIProjections from './views/ROIProjections';
 import Panduan from './views/Panduan';
-import logo from './assets/images/Perintis_OLD.svg';
-import { LogOut } from 'lucide-react';
+import LokasiPasar from './views/LokasiPasar';
+import Notifikasi from './views/Notifikasi';
+import ProfilSaya from './views/ProfilSaya';
+import KebijakanPrivasi from './views/KebijakanPrivasi';
+import KetentuanLayanan from './views/KetentuanLayanan';
 
 export default function App() {
-  // Sync tab with URL search parameter
-  const [activeTab, setActiveTab] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('tab') || 'home';
-  });
-
-  const [validationData, setValidationData] = useState(null);
-  const [calculationData, setCalculationData] = useState(null);
-
-  // Authentication State
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('perintis_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false);
-
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    const url = new URL(window.location);
-    url.searchParams.set('tab', tab);
-    window.history.pushState(null, '', url.toString());
-  };
-
-  useEffect(() => {
-    const handlePopState = () => {
-      const params = new URLSearchParams(window.location.search);
-      setActiveTab(params.get('tab') || 'home');
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  const handleLoginSuccess = (userData) => {
-    setUser(userData);
-    localStorage.setItem('perintis_user', JSON.stringify(userData));
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('perintis_user');
-    setMobileDropdownOpen(false);
-  };
+  const { activeTab, handleTabChange } = useTabRouting();
+  const { user, login, logout } = useUser();
+  const { validationData, setValidationData, calculationData, setCalculationData, selectedRegion, setSelectedRegion } = useAppData();
+  const [authModalOpen, setAuthModalOpen] = React.useState(false);
 
   const renderView = () => {
     switch (activeTab) {
-      case 'home':
-        return <LandingPage setActiveTab={handleTabChange} />;
-      case 'harga':
-        return <HargaPangan />;
-      case 'validator':
-        return <Validator validationData={validationData} setValidationData={setValidationData} />;
-      case 'calculator':
-        return <Calculator calculationData={calculationData} setCalculationData={setCalculationData} />;
-      case 'forum':
-        return <ForumTerbuka />;
-      case 'roi':
-        return <ROIProjections calculationData={calculationData} />;
-      case 'guide':
-        return <Panduan />;
-      default:
-        return <LandingPage setActiveTab={handleTabChange} />;
+      case 'home': return <LandingPage setActiveTab={handleTabChange} />;
+      case 'harga': return <HargaPangan region={selectedRegion} />;
+      case 'lokasi': return <LokasiPasar setSelectedRegion={setSelectedRegion} onNavigate={handleTabChange} />;
+      case 'validator': return <Validator validationData={validationData} setValidationData={setValidationData} />;
+      case 'calculator': return <Calculator calculationData={calculationData} setCalculationData={setCalculationData} />;
+      case 'forum': return <ForumTerbuka />;
+      case 'roi': return <ROIProjections calculationData={calculationData} />;
+      case 'guide': case 'bantuan': return <Panduan />;
+      case 'notifikasi': return <Notifikasi />;
+      case 'profile': return <ProfilSaya user={user} onLogout={logout} />;
+      case 'privacy': return <KebijakanPrivasi />;
+      case 'terms': return <KetentuanLayanan />;
+      default: return <LandingPage setActiveTab={handleTabChange} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased selection:bg-blue-500/10 selection:text-blue-600 relative overflow-x-hidden flex flex-col justify-between">
-      {/* Background Mesh Gradient */}
-      <div className="fixed inset-0 pointer-events-none -z-10 w-full h-full">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 to-slate-100/50 opacity-70"></div>
-        <div className="absolute top-[-10%] right-[-5%] w-[60vw] h-[60vw] rounded-full bg-blue-200/20 blur-[120px] mix-blend-multiply animate-pulse"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-200/20 blur-[100px] mix-blend-multiply animate-pulse"></div>
-      </div>
-
-      {/* Header (Desktop Floating Nav) */}
-      <Header 
-        activeTab={activeTab} 
-        setActiveTab={handleTabChange} 
-        user={user}
-        onOpenAuth={() => setAuthModalOpen(true)}
-        onLogout={handleLogout}
-      />
-      
-      {/* Bottom Nav (Mobile) */}
+    <ErrorBoundary>
+    <ToastProvider>
+    <div className="min-h-screen bg-[#F8ECD2] text-[#171C38] antialiased selection:bg-[#FF6B1A]/20 selection:text-[#171C38] relative overflow-x-hidden flex flex-col justify-between">
+      <Header activeTab={activeTab} setActiveTab={handleTabChange} user={user} onOpenAuth={() => setAuthModalOpen(true)} onLogout={logout} />
       <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
 
-      {/* Mobile Top Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/40 px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden p-0.5">
-            <img src={logo} alt="Perintis Logo" className="w-full h-full object-contain" />
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#171C38] border-b border-white/10 px-4 sm:px-6 py-3 flex items-center justify-between shadow-sm">
+        <button onClick={() => handleTabChange('home')} className="hover:opacity-80 active:scale-95 transition-all">
+          <div className="w-7 h-7 rounded-full overflow-hidden bg-white shadow-sm">
+            <img src={logo} alt="Perintis" className="w-full h-full object-contain" />
           </div>
-          <span className="font-extrabold text-base bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            Perintis
-          </span>
-        </div>
-
-        {/* Mobile Profile Actions */}
-        <div className="flex items-center gap-2 relative">
+        </button>
+        <div className="flex items-center gap-1.5 relative">
+          <button onClick={() => handleTabChange('notifikasi')} className={`relative p-1.5 rounded-full transition-all ${activeTab === 'notifikasi' ? 'text-[#FF6B1A] bg-[#FF6B1A]/10' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
+            <Bell className="w-4.5 h-4.5" />
+            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#FF6B1A] text-white text-[7px] font-bold rounded-full flex items-center justify-center">3</span>
+          </button>
           {user ? (
-            <div>
-              <button 
-                onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
-                className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shadow-inner border border-white"
-              >
-                {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-              </button>
-              {mobileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 z-50 text-left animate-scale-in">
-                  <div className="px-3 py-2 border-b border-slate-100">
-                    <p className="font-bold text-xs text-slate-800 truncate">{user.name}</p>
-                    <p className="text-[10px] text-slate-400 truncate mt-0.5">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full mt-1.5 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Keluar Akun</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            <MobileProfileDropdown user={user} onLogout={logout} onNavigate={handleTabChange} />
           ) : (
-            <button 
-              onClick={() => setAuthModalOpen(true)}
-              className="text-xs font-bold bg-blue-600 text-white px-4 py-2 rounded-full border border-blue-500/20 active:scale-95 transition-all"
-            >
+            <button onClick={() => setAuthModalOpen(true)} className="text-[10px] font-bold bg-[#FF6B1A] text-white px-3.5 py-1.5 rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all">
               Masuk
             </button>
           )}
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-grow w-full px-2 sm:px-4 lg:px-10 pt-24 lg:pt-36 pb-28 lg:pb-12 max-w-[1280px] mx-auto box-border">
-        {renderView()}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#F8ECD2] to-transparent pointer-events-none z-40" />
+
+      <main className="flex-grow w-full px-4 sm:px-6 lg:px-10 pt-20 lg:pt-32 pb-32 lg:pb-16 max-w-[1200px] mx-auto box-border">
+        <div key={activeTab} className="animate-fade-in">
+          {renderView()}
+        </div>
       </main>
 
-      {/* Footer Component */}
       <Footer setActiveTab={handleTabChange} />
 
-      {/* Authenticator Login Modal */}
-      <AuthModal 
-        isOpen={authModalOpen} 
-        onClose={() => setAuthModalOpen(false)} 
-        onLoginSuccess={handleLoginSuccess}
-      />
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} onLoginSuccess={login} />
     </div>
+    </ToastProvider>
+    </ErrorBoundary>
   );
 }
