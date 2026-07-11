@@ -1,9 +1,25 @@
 import os
+import logging
 from dotenv import load_dotenv
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
+
 class Config:
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
+
+    @property
+    def gemini_available(self) -> bool:
+        return bool(self.GEMINI_API_KEY)
+
 
 config = Config()
+
+if not config.gemini_available:
+    logger.warning(
+        "GEMINI_API_KEY is not set. "
+        "AI Validator will fall back to keyword-matching mode. "
+        "To enable AI: set GEMINI_API_KEY in your .env file."
+    )
