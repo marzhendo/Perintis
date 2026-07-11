@@ -1,1 +1,35 @@
-export const getCommodities = async () => {}
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://perintis-backend.koyeb.app';
+
+const DEFAULT_COMMODITIES = [
+  { id: 1, name: 'Beras Premium', unit: 'per Kg', price: 15400, change: 2.4, changeRp: 300, isUp: true, date: '24 Okt 2024', history: [14800, 14950, 15100, 15150, 15250, 15400] },
+  { id: 2, name: 'Cabai Rawit', unit: 'per Kg', price: 45000, change: -5.1, changeRp: -2500, isUp: false, date: '24 Okt 2024', history: [49500, 48000, 47800, 46500, 45800, 45000] },
+  { id: 3, name: 'Daging Ayam', unit: 'per Ekor', price: 38500, change: 1.2, changeRp: 500, isUp: true, date: '23 Okt 2024', history: [37200, 37500, 38100, 38000, 38200, 38500] },
+  { id: 4, name: 'Bawang Merah', unit: 'per Kg', price: 28000, change: -0.8, changeRp: -200, isUp: false, date: '23 Okt 2024', history: [29200, 29000, 28800, 28500, 28200, 28000] },
+  { id: 5, name: 'Minyak Goreng', unit: 'per Liter', price: 18200, change: 0.0, changeRp: 0, isUp: null, date: '22 Okt 2024', history: [18200, 18200, 18200, 18200, 18200, 18200] },
+  { id: 6, name: 'Gula Pasir', unit: 'per Kg', price: 16500, change: 0.6, changeRp: 100, isUp: true, date: '22 Okt 2024', history: [16100, 16200, 16300, 16400, 16400, 16500] },
+  { id: 7, name: 'Telur Ayam Ras', unit: 'per Kg', price: 27500, change: -1.8, changeRp: -500, isUp: false, date: '21 Okt 2024', history: [28900, 28700, 28400, 28000, 27800, 27500] },
+  { id: 8, name: 'Bawang Putih', unit: 'per Kg', price: 32000, change: 1.5, changeRp: 450, isUp: true, date: '21 Okt 2024', history: [31000, 31200, 31400, 31500, 31800, 32000] },
+];
+
+const REGION_MULTIPLIERS = {
+  jakarta: 1.05, jabar: 1.02, jateng: 0.96, jatim: 0.98,
+  sumut: 0.97, sumsel: 0.95, bali: 1.04, lampung: 0.94,
+  kalsel: 0.98, kaltim: 1.07, sulsel: 0.99, papua: 1.20,
+};
+
+export async function fetchCommodities(region) {
+  const url = region ? `${BASE_URL}/api/commodities?region=${region}` : `${BASE_URL}/api/commodities`;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('API Error');
+  return response.json();
+}
+
+export function getFallbackCommodities(region) {
+  const mult = REGION_MULTIPLIERS[region] || 1.0;
+  return DEFAULT_COMMODITIES.map(c => ({
+    ...c,
+    price: Math.round(c.price * mult),
+    changeRp: Math.round(c.changeRp * mult),
+    history: c.history.map(h => Math.round(h * mult)),
+  }));
+}
