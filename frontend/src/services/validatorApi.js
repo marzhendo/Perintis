@@ -1,38 +1,50 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://perintis-backend.koyeb.app';
 
 export async function validateBusiness(form) {
-  const response = await fetch(`${BASE_URL}/api/validate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      nama_usaha: form.businessName || 'Usaha Baru',
-      deskripsi_ide: form.description,
-      target_pasar: form.targetMarket.join(', '),
-    }),
-  });
+  // Tambahkan timeout eksplisit di FE: 25 detik (karena worst-case BE ~20 detik)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-  if (!response.ok) throw new Error('API Error');
+  try {
+    const response = await fetch(`${BASE_URL}/api/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nama_usaha: form.businessName || 'Usaha Baru',
+        deskripsi_ide: form.description,
+        target_pasar: form.targetMarket.join(', '),
+      }),
+      signal: controller.signal,
+    });
 
-  const data = await response.json();
-  return {
-    score: data.skor_bintang ?? 4.7,
-    verdict: data.skor_bintang >= 4.5 ? 'Sangat Layak' : data.skor_bintang >= 3.5 ? 'Layak dengan Catatan' : 'Kurang Layak',
-    market: data.analisis?.market ?? 'Tinggi. Kebutuhan konstan di segmen target yang Anda pilih.',
-    competitor: data.analisis?.competitor ?? 'Sedang. Kompetitor lokal ada, namun kanal penjualan terpilih memberi nilai tambah.',
-    trend: data.analisis?.trend ?? 'Positif. Sesuai dengan pertumbuhan tren adaptasi digital di daerah target.',
-    risk: data.analisis?.risiko ?? 'Fluktuasi harga bahan baku pangan utama dan komisi platform pengiriman.',
-    potential: data.analisis?.potensi ?? 'Skala mikro yang baik. Peluang ekspansi waralaba mikro tinggi setelah 6 bulan stabil.',
-  };
+    if (!response.ok) throw new Error('API Error');
+
+    const data = await response.json();
+    return {
+      score: data.skor_bintang ?? 3.0,
+      // FIX: Gunakan verdict dari Backend, JANGAN override logic dengan threshold yang beda
+      verdict: data.verdict ?? 'Belum bisa dinilai',
+      market: data.analisis?.market ?? 'Koneksi ke sistem analisis terganggu.',
+      competitor: data.analisis?.competitor ?? 'Koneksi ke sistem analisis terganggu.',
+      trend: data.analisis?.trend ?? 'Koneksi ke sistem analisis terganggu.',
+      risk: data.analisis?.risiko ?? 'Koneksi ke sistem analisis terganggu.',
+      potential: data.analisis?.potensi ?? 'Koneksi ke sistem analisis terganggu.',
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export function getFallbackResult() {
+  // FIX: Ubah skor sempurna yang hardcoded (4.7) menjadi netral
+  // Fallback ini hanya muncul jika server/network mati total.
   return {
-    score: 4.7,
-    verdict: 'Sangat Layak',
-    market: 'Tinggi. Kebutuhan konstan di segmen target yang Anda pilih.',
-    competitor: 'Sedang. Kompetitor lokal ada, namun kanal penjualan terpilih memberi nilai tambah.',
-    trend: 'Positif. Sesuai dengan pertumbuhan tren adaptasi digital di daerah target.',
-    risk: 'Fluktuasi harga bahan baku pangan utama dan komisi platform pengiriman.',
-    potential: 'Skala mikro yang baik. Peluang ekspansi waralaba mikro tinggi setelah 6 bulan stabil.',
+    score: 3.0,
+    verdict: 'Menunggu Analisis',
+    market: 'Sistem analisis sedang tidak dapat diakses saat ini.',
+    competitor: 'Mohon periksa koneksi internet Anda atau coba lagi nanti.',
+    trend: 'Sistem analisis sedang tidak dapat diakses saat ini.',
+    risk: 'Sistem analisis sedang tidak dapat diakses saat ini.',
+    potential: 'Sistem analisis sedang tidak dapat diakses saat ini.',
   };
 }
