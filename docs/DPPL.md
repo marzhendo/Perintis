@@ -327,14 +327,19 @@ Menghitung simulasi finansial.
 
 ## Error Response
 
-Seluruh endpoint menggunakan format error yang sama.
+Seluruh endpoint menggunakan format error yang sama. Tidak ada raw exception yang diekspos ke klien.
 
 ```json
 {
-    "message":"Validation failed",
-    "code":"VALIDATION_ERROR"
+    "message": "Validation error at 'body.modal_awal': Field required",
+    "code": "VALIDATION_ERROR"
 }
 ```
+
+Daftar error `code` yang digunakan:
+- `VALIDATION_ERROR` (HTTP 400 & 422): Input dari klien tidak valid.
+- `NOT_FOUND` (HTTP 404): URL endpoint atau resource tidak ditemukan.
+- `INTERNAL_ERROR` (HTTP 500): Kesalahan server yang tidak terduga. Detail exception (stack trace) tidak diekspos ke klien, melainkan dicatat di log server.
 
 ---
 
