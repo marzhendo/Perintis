@@ -49,10 +49,13 @@ class _GeminiValidationResult(BaseModel):
 # Tidak melakukan retry — retry ditangani di orchestrator (Fase 3).
 # ---------------------------------------------------------------------------
 
-# gemini-3.5-flash: stable (GA 19 Mei 2026), tersedia di free tier (15 RPM / 1500 RPD).
-# Dipilih menggantikan gemini-2.5-flash yang dijadwalkan shutdown Juni-Juli 2026.
-# Untuk model 3.x, thinking dikontrol via thinking_level (bukan thinking_budget seperti 2.5).
-_GEMINI_MODEL = "gemini-3.5-flash"
+# gemini-3.1-flash-lite: dipilih setelah benchmark head-to-head vs
+# gemini-3.5-flash. Response time rata-rata 1.79s vs 6.83s, dan yang
+# lebih penting: stabil di semua jenis input (termasuk input ambigu
+# yang bikin 3.5-flash hang >60s karena overthinking). Model ini
+# didesain resmi oleh Google untuk high-volume task yang tidak butuh
+# reasoning kompleks — cocok untuk use case validasi ide bisnis singkat.
+_GEMINI_MODEL = "gemini-3.1-flash-lite"
 
 _SYSTEM_INSTRUCTION = (
     "Kamu adalah konsultan bisnis berpengalaman yang mengkhususkan diri dalam "
@@ -104,11 +107,11 @@ def _call_gemini_api(req: ValidateRequest) -> dict:
                 system_instruction=_SYSTEM_INSTRUCTION,
                 response_mime_type="application/json",
                 response_schema=_GeminiValidationResult,
-                # thinking_level="low" menjaga time-to-first-token agar tidak
-                # melebihi 10 detik timeout. "high" bisa mencapai ~17 detik.
+                # thinking_level="minimal" secara eksplisit diset meski merupakan default
+                # model ini, untuk menjaga konsistensi behavior di masa depan.
                 # CATATAN: gunakan thinking_level (bukan thinking_budget) untuk
                 # model Gemini 3.x — keduanya tidak kompatibel satu sama lain.
-                thinking_config=types.ThinkingConfig(thinking_level="low"),
+                thinking_config=types.ThinkingConfig(thinking_level="minimal"),
             ),
         )
     except Exception as exc:

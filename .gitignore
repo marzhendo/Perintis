@@ -27,3 +27,7 @@ env/
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Temporary / Experimental Files
+backend/experiment.py
+backend/test_fase4.py
