@@ -11,6 +11,7 @@ export default function Header({ activeTab, setActiveTab, user, onOpenAuth, onLo
     { id: 'validator', label: 'Cek Ide' },
     { id: 'calculator', label: 'Hitung Keuntungan' },
     { id: 'roi', label: 'Proyeksi ROI' },
+    { id: 'forum', label: 'Forum' },
     { id: 'guide', label: 'Panduan' },
   ];
 
@@ -23,9 +24,9 @@ export default function Header({ activeTab, setActiveTab, user, onOpenAuth, onLo
   };
 
   return (
-    <nav className="hidden md:flex fixed top-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[1280px] rounded-full border border-white/40 shadow-xl bg-white/70 backdrop-blur-xl z-50 justify-between items-center px-8 py-3 transition-all duration-300">
+    <nav className="hidden lg:flex fixed top-6 left-1/2 -translate-x-1/2 w-[95%] max-w-[1280px] rounded-full border border-white/40 shadow-xl bg-white/70 backdrop-blur-xl z-50 justify-between items-center px-8 py-3 transition-all duration-300">
       {/* Brand Logo & Name */}
-      <div className="flex items-center gap-2.5 w-1/4">
+      <div className="flex items-center gap-2.5 w-1/5">
         <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden p-0.5">
           <img src={logo} alt="Perintis Logo" className="w-full h-full object-contain" />
         </div>
@@ -42,7 +43,7 @@ export default function Header({ activeTab, setActiveTab, user, onOpenAuth, onLo
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`font-semibold text-sm transition-all duration-300 px-4 py-2 rounded-full ${
+              className={`font-semibold text-xs xl:text-sm transition-all duration-300 px-3 xl:px-4 py-2 rounded-full ${
                 isActive
                   ? 'text-blue-600 bg-blue-500/10 border border-blue-500/10 shadow-sm'
                   : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100/50'
@@ -55,7 +56,7 @@ export default function Header({ activeTab, setActiveTab, user, onOpenAuth, onLo
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center justify-end w-1/4 gap-3 relative">
+      <div className="flex items-center justify-end w-1/5 gap-3 relative">
         <button className="text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-full p-2 transition-all">
           <Bell className="w-5 h-5 stroke-[2]" />
         </button>

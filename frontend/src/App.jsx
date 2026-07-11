@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
+import Footer from './components/Footer';
 import AuthModal from './components/AuthModal';
 import LandingPage from './views/LandingPage';
 import HargaPangan from './views/HargaPangan';
 import Validator from './views/Validator';
 import Calculator from './views/Calculator';
+import ForumTerbuka from './views/ForumTerbuka';
 import ROIProjections from './views/ROIProjections';
 import Panduan from './views/Panduan';
 import logo from './assets/images/Perintis_OLD.svg';
-import { User, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 export default function App() {
   // Sync tab with URL search parameter
@@ -66,6 +68,8 @@ export default function App() {
         return <Validator validationData={validationData} setValidationData={setValidationData} />;
       case 'calculator':
         return <Calculator calculationData={calculationData} setCalculationData={setCalculationData} />;
+      case 'forum':
+        return <ForumTerbuka />;
       case 'roi':
         return <ROIProjections calculationData={calculationData} />;
       case 'guide':
@@ -76,7 +80,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased selection:bg-blue-500/10 selection:text-blue-600 relative overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased selection:bg-blue-500/10 selection:text-blue-600 relative overflow-x-hidden flex flex-col justify-between">
       {/* Background Mesh Gradient */}
       <div className="fixed inset-0 pointer-events-none -z-10 w-full h-full">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50/40 to-slate-100/50 opacity-70"></div>
@@ -97,7 +101,7 @@ export default function App() {
       <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
 
       {/* Mobile Top Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/40 px-6 py-4 flex items-center justify-between shadow-sm">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/40 px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden p-0.5">
             <img src={logo} alt="Perintis Logo" className="w-full h-full object-contain" />
@@ -145,9 +149,12 @@ export default function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="min-h-screen px-4 md:px-10 pt-24 md:pt-36 pb-28 md:pb-12 max-w-[1280px] mx-auto">
+      <main className="flex-grow w-full px-2 sm:px-4 lg:px-10 pt-24 lg:pt-36 pb-28 lg:pb-12 max-w-[1280px] mx-auto box-border">
         {renderView()}
       </main>
+
+      {/* Footer Component */}
+      <Footer setActiveTab={handleTabChange} />
 
       {/* Authenticator Login Modal */}
       <AuthModal 
