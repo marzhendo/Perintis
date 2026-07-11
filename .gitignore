@@ -23,6 +23,7 @@ __pycache__/
 venv/
 .venv/
 env/
+*.db
 
 # OS Files
 .DS_Store
@@ -31,3 +32,6 @@ Thumbs.db
 # Temporary / Experimental Files
 backend/experiment.py
 backend/test_fase4.py
+backend/test_auth.py
+backend/test_fase2_errors.py
+

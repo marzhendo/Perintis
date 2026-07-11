@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 
 class Config:
     GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "fallback-dev-secret-change-in-production")
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_HOURS: int = 24  # 24 jam agar juri tidak perlu login ulang saat demo
 
     @property
     def gemini_available(self) -> bool:
