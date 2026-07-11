@@ -1,5 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from ..database import get_db
+from ..dependencies.auth import get_current_user_optional
+from ..models.user import User
 from ..schemas.schemas import CalculateRequest, ValidateRequest
+from ..services import activity_service
 from ..services.commodity_service import get_all_commodities
 from ..services.financial_service import calculate_hpp, calculate_margin, calculate_bep, calculate_roi
 from ..services.validator_service import validate_business_idea
@@ -13,7 +18,7 @@ def commodities():
 
 
 @router.post("/calculate")
-def calculate(req: CalculateRequest):
+def calculate(req: CalculateRequest, db: Session = Depends(get_db), current_user: User | None = Depends(get_current_user_optional)):
     margin = calculate_margin(req)
     if margin <= 0:
         return {
@@ -24,6 +29,9 @@ def calculate(req: CalculateRequest):
             "error": "Harga jual harus lebih besar dari bahan baku per unit",
         }
 
+    if current_user:
+        activity_service.log_activity(db, current_user.id, "simulasi", f"Simulasi BEP untuk usaha")
+
     return {
         "hpp_per_unit": calculate_hpp(req),
         "margin_per_unit": margin,
@@ -33,5 +41,12 @@ def calculate(req: CalculateRequest):
 
 
 @router.post("/validate")
-def validate(req: ValidateRequest):
-    return validate_business_idea(req)
+async def validate(req: ValidateRequest, db: Session = Depends(get_db), current_user: User | None = Depends(get_current_user_optional)):
+    result = await validate_business_idea(req)
+    if current_user:
+        skor = result.get("skor", "?")
+        activity_service.log_activity(
+            db, current_user.id, "validasi", 
+            f"Validasi ide '{req.nama_usaha}' selesai — skor {skor}"
+        )
+    return result
