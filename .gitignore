@@ -1,0 +1,29 @@
+## Antigravity
+.antigravity/
+
+# Environment Variables
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+frontend/dist/
+frontend/build/
+npm-debug.log*
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# OS Files
+.DS_Store
+Thumbs.db
