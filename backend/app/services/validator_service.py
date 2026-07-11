@@ -1,8 +1,229 @@
-import random
+import logging
+from typing import Literal
+
+from google import genai
+from google.genai import types
+from pydantic import BaseModel, ValidationError
+
+from ..core.config import config
 from ..schemas.schemas import ValidateRequest
 
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Custom exceptions — dibedakan agar caller (Fase 3) bisa memutuskan
+# retry vs langsung fallback ke keyword-matching.
+# ---------------------------------------------------------------------------
+
+class GeminiTimeoutError(Exception):
+    """Raised when the Gemini API call exceeds the configured timeout."""
+
+
+class GeminiResponseError(Exception):
+    """Raised when Gemini returns a response that cannot be parsed into
+    the expected schema, or the response shape is invalid."""
+
+
+# ---------------------------------------------------------------------------
+# Internal Pydantic models — hanya dipakai sebagai response_schema ke Gemini.
+# BUKAN bagian dari public API, tidak di-export ke schemas.py.
+# ---------------------------------------------------------------------------
+
+class _GeminiAnalisis(BaseModel):
+    market: str
+    competitor: str
+    trend: str
+    risiko: str
+    potensi: str
+
+
+class _GeminiValidationResult(BaseModel):
+    skor_bintang: float
+    verdict: Literal["Sangat Layak", "Layak dengan Catatan", "Kurang Layak"]
+    analisis: _GeminiAnalisis
+
+
+# ---------------------------------------------------------------------------
+# Gemini client wrapper — PURE: tidak tahu FastAPI, tidak return Response.
+# Tidak melakukan retry — retry ditangani di orchestrator (Fase 3).
+# ---------------------------------------------------------------------------
+
+# gemini-3.5-flash: stable (GA 19 Mei 2026), tersedia di free tier (15 RPM / 1500 RPD).
+# Dipilih menggantikan gemini-2.5-flash yang dijadwalkan shutdown Juni-Juli 2026.
+# Untuk model 3.x, thinking dikontrol via thinking_level (bukan thinking_budget seperti 2.5).
+_GEMINI_MODEL = "gemini-3.5-flash"
+
+_SYSTEM_INSTRUCTION = (
+    "Kamu adalah konsultan bisnis berpengalaman yang mengkhususkan diri dalam "
+    "evaluasi kelayakan usaha mikro, kecil, dan menengah (UMKM) di Indonesia. "
+    "Tugasmu adalah menilai ide bisnis secara objektif berdasarkan lima dimensi: "
+    "potensi pasar, lanskap kompetitor, relevansi tren, eksposur risiko, dan "
+    "potensi pertumbuhan jangka pendek. "
+    "Berikan penilaian yang realistis dan actionable, bukan sekadar pujian. "
+    "Skor kelayakan (skor_bintang) menggunakan skala 1.0-5.0 dengan presisi 0.1."
+)
+
+
+def _build_prompt(req: ValidateRequest) -> str:
+    return (
+        f"Nama Usaha: {req.nama_usaha}\n"
+        f"Deskripsi Ide: {req.deskripsi_ide}\n"
+        f"Target Pasar: {req.target_pasar}\n\n"
+        "Evaluasi ide bisnis di atas berdasarkan:\n"
+        "1. Kejelasan dan ukuran segmen target pasar\n"
+        "2. Kelayakan model bisnis dan struktur biaya\n"
+        "3. Relevansi dengan tren konsumen saat ini\n"
+        "4. Risiko utama yang perlu dimitigasi\n"
+        "5. Potensi pertumbuhan dan skalabilitas"
+    )
+
+
+def _call_gemini_api(req: ValidateRequest) -> dict:
+    """
+    Memanggil Gemini API dan mengembalikan dict yang shape-nya identik
+    dengan output validate_business_idea().
+
+    Raises:
+        GeminiTimeoutError: jika request melebihi 10 detik.
+        GeminiResponseError: jika response tidak bisa diparsing sebagai
+            _GeminiValidationResult yang valid, atau shape tidak sesuai.
+    """
+    client = genai.Client(
+        api_key=config.GEMINI_API_KEY,
+        http_options=types.HttpOptions(timeout=10_000),  # 10 detik, unit ms
+    )
+
+    prompt = _build_prompt(req)
+
+    try:
+        response = client.models.generate_content(
+            model=_GEMINI_MODEL,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=_SYSTEM_INSTRUCTION,
+                response_mime_type="application/json",
+                response_schema=_GeminiValidationResult,
+                # thinking_level="low" menjaga time-to-first-token agar tidak
+                # melebihi 10 detik timeout. "high" bisa mencapai ~17 detik.
+                # CATATAN: gunakan thinking_level (bukan thinking_budget) untuk
+                # model Gemini 3.x — keduanya tidak kompatibel satu sama lain.
+                thinking_config=types.ThinkingConfig(thinking_level="low"),
+            ),
+        )
+    except Exception as exc:
+        exc_msg = str(exc).lower()
+
+        # Timeout dari SDK muncul sebagai berbagai exception tergantung versi
+        # dan transport layer — tangkap berdasarkan kata kunci dalam pesan.
+        if any(kw in exc_msg for kw in ("timeout", "deadline", "timed out")):
+            raise GeminiTimeoutError(
+                f"Gemini API timed out after 10s: {exc}"
+            ) from exc
+
+        # Semua error API lain (4xx, 5xx, network) wrap ke GeminiResponseError
+        # agar caller bisa bedakan dari GeminiTimeoutError untuk keputusan retry.
+        raise GeminiResponseError(
+            f"Gemini API call failed [{type(exc).__name__}]: {exc}"
+        ) from exc
+
+    try:
+        result = _GeminiValidationResult.model_validate_json(response.text)
+    except (ValidationError, ValueError, TypeError) as exc:
+        raise GeminiResponseError(
+            f"Gemini response could not be parsed into expected schema: {exc}\n"
+            f"Raw response: {response.text!r}"
+        ) from exc
+
+    # Guard ekstra: pastikan skor di dalam range yang valid
+    if not (0.0 <= result.skor_bintang <= 5.0):
+        raise GeminiResponseError(
+            f"skor_bintang out of range: {result.skor_bintang}. Expected 0.0-5.0."
+        )
+
+    gemini_result = {
+        "skor_bintang": round(result.skor_bintang, 1),
+        "verdict": result.verdict,
+        "analisis": {
+            "market": result.analisis.market,
+            "competitor": result.analisis.competitor,
+            "trend": result.analisis.trend,
+            "risiko": result.analisis.risiko,
+            "potensi": result.analisis.potensi,
+        },
+    }
+    _assert_response_shape(gemini_result)
+    return gemini_result
+
+
+# ---------------------------------------------------------------------------
+# Orchestrator — public entry point. Tidak pernah raise exception ke
+# route layer; semua kegagalan ditangani internally dengan fallback.
+# ---------------------------------------------------------------------------
 
 def validate_business_idea(req: ValidateRequest) -> dict:
+    """
+    Entry point utama. Mencoba Gemini AI terlebih dahulu (dengan 1x retry
+    untuk transient timeout), lalu fallback ke keyword-matching jika gagal.
+
+    Return shape selalu identik — route layer tidak pernah tahu mode mana
+    yang aktif.
+    """
+    try:
+        return _validate_with_gemini_and_retry(req)
+    except GeminiTimeoutError as exc:
+        logger.warning(
+            "Gemini validation failed after retry (timeout). "
+            "Falling back to keyword-matching. Reason: %s",
+            exc,
+        )
+    except GeminiResponseError as exc:
+        logger.warning(
+            "Gemini validation failed (response error). "
+            "Falling back to keyword-matching. Reason: %s",
+            exc,
+        )
+    except Exception as exc:
+        # Exception yang tidak diantisipasi — log sebagai ERROR karena
+        # ini mungkin bug atau perubahan API yang tidak kita handle.
+        logger.error(
+            "Unexpected error during Gemini validation [%s]: %s. "
+            "Falling back to keyword-matching.",
+            type(exc).__name__,
+            exc,
+        )
+
+    return _validate_with_keyword_matching(req)
+
+
+def _validate_with_gemini_and_retry(req: ValidateRequest) -> dict:
+    """
+    Memanggil _call_gemini_api() dengan maksimal 1x retry, HANYA untuk
+    GeminiTimeoutError (transient). GeminiResponseError tidak di-retry
+    karena bersifat struktural — retry tidak akan mengubah hasilnya.
+
+    Raises:
+        GeminiTimeoutError: jika kedua percobaan (original + retry) timeout.
+        GeminiResponseError: langsung dari percobaan pertama, tanpa retry.
+        Exception: exception lain yang tidak terduga, tanpa retry.
+    """
+    try:
+        return _call_gemini_api(req)
+    except GeminiTimeoutError:
+        # Timeout bersifat transient — coba sekali lagi.
+        # Kalau retry juga timeout atau gagal dengan error lain,
+        # exception naik ke validate_business_idea() untuk ditangani.
+        logger.warning("Gemini API timed out, retrying once (attempt 2/2)...")
+        return _call_gemini_api(req)
+    # GeminiResponseError dan Exception lain TIDAK ditangkap di sini —
+    # biarkan naik ke validate_business_idea() agar tidak ikut di-retry.
+
+
+def _validate_with_keyword_matching(req: ValidateRequest) -> dict:
+    """
+    Fallback: menjalankan logic keyword-matching original dan memvalidasi
+    bahwa shape return-nya selalu benar sebelum dikembalikan ke caller.
+    """
     desc = req.deskripsi_ide.lower()
     panjang = len(desc)
 
@@ -55,24 +276,49 @@ def validate_business_idea(req: ValidateRequest) -> dict:
     else:
         verdict = "Kurang Layak"
 
-    market_analysis = _get_market_analysis(market_count, desc)
-    competitor_analysis = _get_competitor_analysis(bisnis_count, desc)
-    trend_analysis = _get_trend_analysis(trend_count, desc)
-    risk_analysis = _get_risk_analysis(desc)
-    potential_analysis = _get_potential_analysis(score, desc)
-
-    return {
+    result = {
         "skor_bintang": score,
         "verdict": verdict,
         "analisis": {
-            "market": market_analysis,
-            "competitor": competitor_analysis,
-            "trend": trend_analysis,
-            "risiko": risk_analysis,
-            "potensi": potential_analysis,
+            "market": _get_market_analysis(market_count, desc),
+            "competitor": _get_competitor_analysis(bisnis_count, desc),
+            "trend": _get_trend_analysis(trend_count, desc),
+            "risiko": _get_risk_analysis(desc),
+            "potensi": _get_potential_analysis(score, desc),
         },
     }
 
+    # Safety assertion: pastikan semua key ada sebelum response keluar.
+    # Ini last-line-of-defense terhadap bug regresi di masa depan.
+    _assert_response_shape(result)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Response shape validator — dipakai oleh kedua jalur (Gemini & fallback)
+# sebagai safety net terakhir sebelum data keluar ke FE.
+# ---------------------------------------------------------------------------
+
+_REQUIRED_ANALISIS_KEYS = {"market", "competitor", "trend", "risiko", "potensi"}
+
+
+def _assert_response_shape(result: dict) -> None:
+    """
+    Memastikan result dict memiliki semua key yang dibutuhkan FE.
+    Raise AssertionError jika ada key yang hilang — lebih baik crash
+    di sini daripada kirim response cacat yang merusak FE.
+    """
+    assert "skor_bintang" in result, "Missing key: skor_bintang"
+    assert "verdict" in result, "Missing key: verdict"
+    assert "analisis" in result, "Missing key: analisis"
+    assert isinstance(result["analisis"], dict), "analisis must be a dict"
+    missing = _REQUIRED_ANALISIS_KEYS - result["analisis"].keys()
+    assert not missing, f"Missing analisis keys: {missing}"
+
+
+# ---------------------------------------------------------------------------
+# Keyword-matching helpers — fallback logic, JANGAN dihapus.
+# ---------------------------------------------------------------------------
 
 def _get_market_analysis(market_count: int, desc: str) -> str:
     if market_count >= 3:
