@@ -5,7 +5,32 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — feat/auth-system
+## [Unreleased] — feat/fase2-forum-profile
+
+### Added
+- **Database Schemas (Fase 2)**
+  - `ForumThread`, `ForumComment`, `ForumLike` untuk fitur komunitas.
+  - `Notification` untuk notifikasi balasan dan like forum.
+  - `UserActivity` untuk mencatat aktivitas validasi, simulasi, dan forum secara riil.
+  - Penambahan kolom `phone` dan `bio` pada tabel `User`.
+- **Public & Protected Endpoints**
+  - `GET /api/forum/threads` (Public) - list thread + author badge dinamis.
+  - `POST /api/forum/threads` (Protected).
+  - `POST /api/forum/threads/{id}/comments` (Protected) - otomatis memicu `Notification` ke pemilik thread.
+  - `POST /api/forum/threads/{id}/like` (Protected) - toggle like.
+  - `GET /api/notifications` & `PATCH /api/notifications/{id}/read` (Protected).
+  - `GET /api/profile/stats` (Protected) - return akumulasi `UserActivity` aktual.
+  - `PATCH /api/profile` (Protected) - update profil tanpa mengubah email.
+- **Activity Triggering**
+  - Dependency baru `get_current_user_optional()` untuk mendeteksi user login pada endpoint public.
+  - `/api/validate` dan `/api/calculate` sekarang menyimpan log `UserActivity` (tipe validasi/simulasi) HANYA jika pengguna sedang login. Fitur dasar tetap public.
+
+### Changed
+- File eksperimen `backend/test_*.py` sekarang dimasukkan ke `.gitignore` untuk mencegah script testing naik ke repo.
+
+---
+
+## [0.4.0] — feat/auth-system
 
 ### Added
 - **Database Foundation (SQLite + SQLAlchemy)**

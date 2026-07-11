@@ -15,6 +15,7 @@ from ..models.user import User
 from ..services import auth_service
 
 _bearer_scheme = HTTPBearer()
+_bearer_scheme_optional = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
@@ -41,3 +42,27 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Pengguna tidak ditemukan.")
 
     return user
+
+
+def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme_optional),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """
+    FastAPI dependency: ekstrak token jika ada, tapi jangan error jika tidak ada.
+    Berguna untuk endpoint public yang memiliki fitur tambahan jika user login.
+    """
+    if credentials is None:
+        return None
+    
+    token = credentials.credentials
+    payload = auth_service.decode_access_token(token)
+
+    if payload is None:
+        return None
+
+    user_id: str | None = payload.get("sub")
+    if user_id is None:
+        return None
+
+    return auth_service.get_user_by_id(db, int(user_id))
