@@ -41,8 +41,8 @@ def calculate(req: CalculateRequest, db: Session = Depends(get_db), current_user
 
 
 @router.post("/validate")
-async def validate(req: ValidateRequest, db: Session = Depends(get_db), current_user: User | None = Depends(get_current_user_optional)):
-    result = await validate_business_idea(req)
+def validate(req: ValidateRequest, db: Session = Depends(get_db), current_user: User | None = Depends(get_current_user_optional)):
+    result = validate_business_idea(req)
     if current_user:
         skor = result.get("skor", "?")
         activity_service.log_activity(

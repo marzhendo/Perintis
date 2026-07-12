@@ -1,50 +1,94 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, Calendar, Shield, Edit2, Save, X, Clock, TrendingUp, Award, MessageSquare, LogOut, Camera, Bell } from 'lucide-react';
 
-export default function ProfilSaya({ user, onLogout }) {
+import { fetchApi } from '../services/apiClient';
+
+export default function ProfilSaya({ user, onLogout, onOpenAuth }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [statsData, setStatsData] = useState(null);
+  
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    phone: user?.phone || '0812-3456-7890',
-    bio: user?.bio || 'Calon wirausaha muda yang sedang merintis bisnis kuliner rumahan.',
+    phone: user?.phone || '',
+    bio: user?.bio || '',
   });
+
+  React.useEffect(() => {
+    if (user) {
+      fetchApi('/api/profile/stats')
+        .then(data => {
+          setStatsData(data);
+          setForm({
+            name: data.name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            bio: data.bio || ''
+          });
+        })
+        .catch(console.error);
+    }
+  }, [user]);
 
   if (!user) {
     return (
       <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-12 text-center animate-fade-in">
         <User className="w-12 h-12 text-[#6F7178] mx-auto mb-3 stroke-[1.5]" />
         <h3 className="font-bold text-[#171C38] text-sm">Belum Masuk</h3>
-        <p className="text-xs text-[#6F7178] mt-1">Silakan masuk untuk melihat profil Anda.</p>
+        <p className="text-xs text-[#6F7178] mt-1 mb-6">Silakan masuk untuk melihat profil Anda.</p>
+        <button onClick={onOpenAuth} className="btn-primary text-sm px-8 py-3">
+          Masuk / Daftar
+        </button>
       </div>
     );
   }
 
   const getInitials = (name) =>
-    name.split(' ').map(n => n[0]).join('').toUpperCase();
+    (name || '').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setSaving(false);
-    setEditing(false);
+    try {
+      await fetchApi('/api/profile', {
+        method: 'PATCH',
+        body: JSON.stringify({ phone: form.phone, bio: form.bio })
+      });
+      
+      // Update local storage user data
+      const stored = JSON.parse(localStorage.getItem('perintis_user') || '{}');
+      stored.phone = form.phone;
+      stored.bio = form.bio;
+      localStorage.setItem('perintis_user', JSON.stringify(stored));
+      
+      setEditing(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const joinedDate = '15 Januari 2026';
+  const joinedDate = user.created_at ? new Date(user.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Baru saja';
+  
   const stats = [
-    { label: 'Analisis Validasi', value: '12', icon: Award, color: '#FF6B1A' },
-    { label: 'Simulasi BEP', value: '8', icon: TrendingUp, color: '#10B981' },
-    { label: 'Diskusi Forum', value: '24', icon: MessageSquare, color: '#3B82F6' },
-    { label: 'Hari Aktif', value: '86', icon: Clock, color: '#8B5CF6' },
+    { label: 'Analisis Validasi', value: statsData?.validasi_count || 0, icon: Award, color: '#FF6B1A' },
+    { label: 'Simulasi BEP', value: statsData?.simulasi_count || 0, icon: TrendingUp, color: '#10B981' },
+    { label: 'Diskusi Forum', value: statsData?.forum_count || 0, icon: MessageSquare, color: '#3B82F6' },
+    { label: 'Hari Aktif', value: statsData?.hari_aktif || 1, icon: Clock, color: '#8B5CF6' },
   ];
 
-  const activities = [
-    { action: 'Validasi ide "Kuliner Sehat" selesai', time: '2 jam lalu', color: '#FF6B1A' },
-    { action: 'Simulasi BEP untuk usaha katering', time: '1 hari lalu', color: '#10B981' },
-    { action: 'Bergabung di forum "Strategi Harga Jual"', time: '3 hari lalu', color: '#3B82F6' },
-    { action: 'Memantau harga cabai rawit', time: '5 hari lalu', color: '#EF4444' },
-  ];
+  const activities = (statsData?.recent_activities || []).map(a => {
+    let color = '#3B82F6';
+    if (a.type === 'validasi') color = '#FF6B1A';
+    else if (a.type === 'simulasi') color = '#10B981';
+    
+    return {
+      action: a.description,
+      time: new Date(a.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      color
+    };
+  });
 
   return (
     <div className="space-y-8 animate-fade-in text-left">
@@ -67,23 +111,23 @@ export default function ProfilSaya({ user, onLogout }) {
                 <Camera className="w-3.5 h-3.5 text-[#6F7178]" />
               </button>
             </div>
-            <h3 className="text-lg font-bold text-[#171C38] mt-4">{user.name}</h3>
-            <p className="text-xs text-[#6F7178]">{user.email}</p>
+            <h3 className="text-lg font-bold text-[#171C38] mt-4">{statsData?.name || user.name}</h3>
+            <p className="text-xs text-[#6F7178]">{statsData?.email || user.email}</p>
             <div className="flex items-center justify-center gap-1.5 mt-3">
               <Calendar className="w-3.5 h-3.5 text-[#6F7178]" />
               <span className="text-[10px] text-[#6F7178] font-medium">Bergabung sejak {joinedDate}</span>
             </div>
             <div className="mt-5 pt-5 border-t border-[#E8E8E8] flex justify-center gap-6">
               <div className="text-center">
-                <p className="text-lg font-extrabold text-[#171C38]">12</p>
+                <p className="text-lg font-extrabold text-[#171C38]">{statsData?.validasi_count || 0}</p>
                 <p className="text-[9px] text-[#6F7178] font-semibold uppercase tracking-wider">Validasi</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-extrabold text-[#171C38]">8</p>
+                <p className="text-lg font-extrabold text-[#171C38]">{statsData?.simulasi_count || 0}</p>
                 <p className="text-[9px] text-[#6F7178] font-semibold uppercase tracking-wider">Simulasi</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-extrabold text-[#171C38]">24</p>
+                <p className="text-lg font-extrabold text-[#171C38]">{statsData?.forum_count || 0}</p>
                 <p className="text-[9px] text-[#6F7178] font-semibold uppercase tracking-wider">Forum</p>
               </div>
             </div>
@@ -197,7 +241,7 @@ export default function ProfilSaya({ user, onLogout }) {
           <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 md:p-8 card-lift">
             <h3 className="font-bold text-[#171C38] text-sm mb-5">Aktivitas Terbaru</h3>
             <div className="space-y-0">
-              {activities.map((a, i) => (
+              {activities.length > 0 ? activities.map((a, i) => (
                 <div key={i} className={`flex gap-4 py-3 border-b border-[#E8E8E8] last:border-0 last:pb-0 animate-slide-up delay-${Math.min(i + 1, 8)}`}>
                   <div className="relative flex flex-col items-center">
                     <div className="w-2.5 h-2.5 rounded-full mt-1.5" style={{ backgroundColor: a.color }} />
@@ -208,7 +252,9 @@ export default function ProfilSaya({ user, onLogout }) {
                     <p className="text-[10px] text-[#6F7178] font-medium mt-0.5">{a.time}</p>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-xs text-[#6F7178] py-4 text-center">Belum ada aktivitas tercatat.</p>
+              )}
             </div>
           </div>
 
