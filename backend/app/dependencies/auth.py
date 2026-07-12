@@ -6,6 +6,7 @@ Sesuai ARCHITECTURE.md: Route never contains business logic — dependency ini
 memisahkan logika verifikasi token dari route handler.
 """
 
+from __future__ import annotations
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
