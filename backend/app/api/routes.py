@@ -13,8 +13,10 @@ router = APIRouter()
 
 
 @router.get("/commodities")
-def commodities():
-    return get_all_commodities()
+def commodities(province: str | None = None, region: str | None = None):
+    # Support both 'province' (new) and 'region' (legacy) query parameters
+    location = province or region
+    return get_all_commodities(location)
 
 
 @router.post("/calculate")

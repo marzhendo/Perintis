@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { validateBusiness, getFallbackResult } from '../services/validatorApi';
 import { useToast } from '../components/Toast';
 import ValidatorForm from '../components/ValidatorForm';
 import ValidatorResult from '../components/ValidatorResult';
+import { getProvinsi, getKabupaten, getKecamatan } from '../services/areaService';
 
 const formatRupiah = (val) => {
   return new Intl.NumberFormat('id-ID', {
@@ -10,9 +11,26 @@ const formatRupiah = (val) => {
   }).format(val);
 };
 
-export default function Validator({ validationData, setValidationData }) {
+export default function Validator({ validationData, setValidationData, selectedRegion, setSelectedRegion }) {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
+  const [provinsiList, setProvinsiList] = useState([]);
+  const [kabupatenList, setKabupatenList] = useState([]);
+  const [kecamatanList, setKecamatanList] = useState([]);
+
+  // Parse selectedRegion string (e.g. "JAWA BARAT, KOTA BEKASI, JATIASIH")
+  const parseRegionString = (str) => {
+    if (!str) return { province: 'Seluruh Indonesia', kabupaten: '', kecamatan: '' };
+    const parts = str.split(',').map(s => s.trim());
+    return {
+      province: parts[0] || 'Seluruh Indonesia',
+      kabupaten: parts[1] || '',
+      kecamatan: parts[2] || '',
+    };
+  };
+
+  const initialRegion = parseRegionString(validationData?.input?.location || selectedRegion);
+
   const [form, setForm] = useState({
     businessName: validationData?.input?.businessName || '',
     category: validationData?.input?.category || 'Kuliner',
@@ -20,7 +38,93 @@ export default function Validator({ validationData, setValidationData }) {
     targetMarket: validationData?.input?.targetMarket || ['Mahasiswa'],
     channels: validationData?.input?.channels || ['Offline/Warung'],
     capital: validationData?.input?.capital || 5000000,
+    locationProvince: validationData?.input?.locationProvince || initialRegion.province,
+    locationKabupaten: validationData?.input?.locationKabupaten || initialRegion.kabupaten,
+    locationKecamatan: validationData?.input?.locationKecamatan || initialRegion.kecamatan,
   });
+
+  useEffect(() => {
+    getProvinsi().then(list => {
+      setProvinsiList(list.sort((a, b) => a.nama.localeCompare(b.nama)));
+    });
+  }, []);
+
+  // Initialize kabupaten and kecamatan lists if province/kabupaten are pre-selected
+  useEffect(() => {
+    const initSubRegions = async () => {
+      if (!provinsiList.length) return;
+      
+      const { province, kabupaten, kecamatan } = parseRegionString(selectedRegion || form.locationProvince);
+
+      if (province && province !== 'Seluruh Indonesia') {
+        const prov = provinsiList.find(p => p.nama === province);
+        if (prov) {
+          const kabs = await getKabupaten(prov.id);
+          setKabupatenList(kabs);
+          
+          const targetKab = kabupaten || form.locationKabupaten;
+          const kab = kabs.find(k => k.nama === targetKab);
+          if (kab) {
+            const kecs = await getKecamatan(kab.id);
+            setKecamatanList(kecs);
+          }
+        }
+      }
+    };
+    initSubRegions();
+  }, [provinsiList, selectedRegion]);
+
+  const updateGlobalRegion = (prov, kab, kec) => {
+    if (!setSelectedRegion) return;
+    const parts = [prov, kab, kec].filter(Boolean);
+    if (parts.length > 0 && parts[0] !== 'Seluruh Indonesia') {
+      setSelectedRegion(parts.join(', '));
+    } else {
+      setSelectedRegion(null);
+    }
+  };
+
+  const handleProvinsiChange = async (provName) => {
+    const prov = provinsiList.find(p => p.nama === provName);
+    setForm(f => ({
+      ...f,
+      locationProvince: provName,
+      locationKabupaten: '',
+      locationKecamatan: ''
+    }));
+    setKabupatenList([]);
+    setKecamatanList([]);
+    updateGlobalRegion(provName, '', '');
+
+    if (prov) {
+      const kabs = await getKabupaten(prov.id);
+      setKabupatenList(kabs);
+    }
+  };
+
+  const handleKabupatenChange = async (kabName) => {
+    const kab = kabupatenList.find(k => k.nama === kabName);
+    setForm(f => ({
+      ...f,
+      locationKabupaten: kabName,
+      locationKecamatan: ''
+    }));
+    setKecamatanList([]);
+    updateGlobalRegion(form.locationProvince, kabName, '');
+
+    if (kab) {
+      const kecs = await getKecamatan(kab.id);
+      setKecamatanList(kecs);
+    }
+  };
+
+  const handleKecamatanChange = (kecName) => {
+    setForm(f => ({
+      ...f,
+      locationKecamatan: kecName
+    }));
+    updateGlobalRegion(form.locationProvince, form.locationKabupaten, kecName);
+  };
 
   const handleCheckboxChange = (field, value) => {
     const current = [...form[field]];
@@ -38,8 +142,23 @@ export default function Validator({ validationData, setValidationData }) {
       return;
     }
     setLoading(true);
+    
+    // Construct single location string for backend payload
+    const locParts = [];
+    if (form.locationProvince && form.locationProvince !== 'Seluruh Indonesia') {
+      locParts.push(form.locationProvince);
+      if (form.locationKabupaten) locParts.push(form.locationKabupaten);
+      if (form.locationKecamatan) locParts.push(form.locationKecamatan);
+    }
+    const locationStr = locParts.length > 0 ? locParts.join(', ') : 'Seluruh Indonesia';
+
+    const payload = {
+      ...form,
+      location: locationStr
+    };
+
     try {
-      const result = await validateBusiness(form);
+      const result = await validateBusiness(payload);
       setValidationData({ input: form, result });
       toast.success('Analisis selesai! Lihat hasil di bawah.');
     } catch {
@@ -69,6 +188,12 @@ export default function Validator({ validationData, setValidationData }) {
               onAnalyze={handleAnalyze}
               formatRupiah={formatRupiah}
               handleCheckboxChange={handleCheckboxChange}
+              provinsiList={provinsiList}
+              kabupatenList={kabupatenList}
+              kecamatanList={kecamatanList}
+              onProvinsiChange={handleProvinsiChange}
+              onKabupatenChange={handleKabupatenChange}
+              onKecamatanChange={handleKecamatanChange}
             />
           </div>
         </div>
