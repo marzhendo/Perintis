@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { User, Bell, BookOpen, LogOut, ChevronDown, HelpCircle } from 'lucide-react';
 
-export default function ProfileMenu({ user, onLogout, onOpenAuth, onNavigate }) {
+export default function ProfileMenu({ user, onLogout, onOpenAuth, onNavigate, unreadCount }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -40,7 +40,7 @@ export default function ProfileMenu({ user, onLogout, onOpenAuth, onNavigate }) 
 
   const menuItems = [
     { id: 'profile', label: 'Profil Saya', icon: User, desc: 'Kelola data diri dan preferensi' },
-    { id: 'notifikasi', label: 'Notifikasi', icon: Bell, desc: 'Aktivitas dan pengingat', badge: 2 },
+    { id: 'notifikasi', label: 'Notifikasi', icon: Bell, desc: 'Aktivitas dan pengingat', badge: unreadCount > 0 ? unreadCount : null },
     { id: 'guide', label: 'Panduan', icon: BookOpen, desc: 'Pelajari fitur platform' },
     { id: 'bantuan', label: 'Pusat Bantuan', icon: HelpCircle, desc: 'FAQ dan dukungan' },
     { id: 'logout', label: 'Keluar Akun', icon: LogOut, desc: '', danger: true },

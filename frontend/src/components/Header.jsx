@@ -3,7 +3,7 @@ import { Bell } from 'lucide-react';
 import logo from '../assets/images/Perintis.svg';
 import ProfileMenu from './ProfileMenu';
 
-export default function Header({ activeTab, setActiveTab, user, onOpenAuth, onLogout }) {
+export default function Header({ activeTab, setActiveTab, user, unreadCount, onOpenAuth, onLogout }) {
   const menuItems = [
     { id: 'home', label: 'Beranda' },
     { id: 'harga', label: 'Pantau Harga' },
@@ -56,7 +56,11 @@ export default function Header({ activeTab, setActiveTab, user, onOpenAuth, onLo
           title="Notifikasi"
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#FF6B1A] text-white text-[7px] font-bold rounded-full flex items-center justify-center shadow-sm animate-pulse-soft">3</span>
+          {user && unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#FF6B1A] text-white text-[7px] font-bold rounded-full flex items-center justify-center shadow-sm animate-pulse-soft">
+              {unreadCount}
+            </span>
+          )}
         </button>
 
         <ProfileMenu
@@ -64,6 +68,7 @@ export default function Header({ activeTab, setActiveTab, user, onOpenAuth, onLo
           onLogout={onLogout}
           onOpenAuth={onOpenAuth}
           onNavigate={setActiveTab}
+          unreadCount={unreadCount}
         />
       </div>
     </nav>

@@ -25,6 +25,10 @@ def get_profile_stats(db: Session = Depends(get_db), current_user: User = Depend
     recents = activity_service.get_recent_activities(db, current_user.id, limit=5)
     
     return ProfileStatsResponse(
+        name=current_user.name,
+        email=current_user.email,
+        phone=current_user.phone,
+        bio=current_user.bio,
         validasi_count=val_count,
         simulasi_count=sim_count,
         forum_count=for_count,

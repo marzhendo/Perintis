@@ -9,6 +9,7 @@ import { ToastProvider } from './components/Toast';
 import useTabRouting from './hooks/useTabRouting';
 import useUser from './hooks/useUser';
 import useAppData from './hooks/useAppData';
+import { fetchApi } from './services/apiClient';
 import logo from './assets/images/Perintis.svg';
 import { Bell } from 'lucide-react';
 import LandingPage from './views/LandingPage';
@@ -29,6 +30,28 @@ export default function App() {
   const { user, login, logout } = useUser();
   const { validationData, setValidationData, calculationData, setCalculationData, selectedRegion, setSelectedRegion } = useAppData();
   const [authModalOpen, setAuthModalOpen] = React.useState(false);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  // Auto-logout on token expiration
+  React.useEffect(() => {
+    const handleAuthExpired = () => {
+      logout();
+      setAuthModalOpen(true);
+    };
+    window.addEventListener('auth-expired', handleAuthExpired);
+    return () => window.removeEventListener('auth-expired', handleAuthExpired);
+  }, [logout]);
+
+  // Fetch unread count when user changes or notification tab is opened
+  React.useEffect(() => {
+    if (user) {
+      fetchApi('/api/notifications/unread-count')
+        .then(res => setUnreadCount(res.count))
+        .catch(() => {});
+    } else {
+      setUnreadCount(0);
+    }
+  }, [user, activeTab]);
 
   const renderView = () => {
     switch (activeTab) {
@@ -37,11 +60,11 @@ export default function App() {
       case 'lokasi': return <LokasiPasar setSelectedRegion={setSelectedRegion} onNavigate={handleTabChange} />;
       case 'validator': return <Validator validationData={validationData} setValidationData={setValidationData} />;
       case 'calculator': return <Calculator calculationData={calculationData} setCalculationData={setCalculationData} />;
-      case 'forum': return <ForumTerbuka />;
+      case 'forum': return <ForumTerbuka user={user} onOpenAuth={() => setAuthModalOpen(true)} />;
       case 'roi': return <ROIProjections calculationData={calculationData} />;
       case 'guide': case 'bantuan': return <Panduan />;
-      case 'notifikasi': return <Notifikasi />;
-      case 'profile': return <ProfilSaya user={user} onLogout={logout} />;
+      case 'notifikasi': return <Notifikasi user={user} onOpenAuth={() => setAuthModalOpen(true)} />;
+      case 'profile': return <ProfilSaya user={user} onLogout={logout} onOpenAuth={() => setAuthModalOpen(true)} />;
       case 'privacy': return <KebijakanPrivasi />;
       case 'terms': return <KetentuanLayanan />;
       default: return <LandingPage setActiveTab={handleTabChange} />;
@@ -52,7 +75,7 @@ export default function App() {
     <ErrorBoundary>
     <ToastProvider>
     <div className="min-h-screen bg-[#F8ECD2] text-[#171C38] antialiased selection:bg-[#FF6B1A]/20 selection:text-[#171C38] relative overflow-x-hidden flex flex-col justify-between">
-      <Header activeTab={activeTab} setActiveTab={handleTabChange} user={user} onOpenAuth={() => setAuthModalOpen(true)} onLogout={logout} />
+      <Header activeTab={activeTab} setActiveTab={handleTabChange} user={user} unreadCount={unreadCount} onOpenAuth={() => setAuthModalOpen(true)} onLogout={logout} />
       <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
 
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#171C38] border-b border-white/10 px-4 sm:px-6 py-3 flex items-center justify-between shadow-sm">
@@ -64,7 +87,11 @@ export default function App() {
         <div className="flex items-center gap-1.5 relative">
           <button onClick={() => handleTabChange('notifikasi')} className={`relative p-1.5 rounded-full transition-all ${activeTab === 'notifikasi' ? 'text-[#FF6B1A] bg-[#FF6B1A]/10' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
             <Bell className="w-4.5 h-4.5" />
-            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#FF6B1A] text-white text-[7px] font-bold rounded-full flex items-center justify-center">3</span>
+            {user && unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#FF6B1A] text-white text-[7px] font-bold rounded-full flex items-center justify-center">
+                {unreadCount}
+              </span>
+            )}
           </button>
           {user ? (
             <MobileProfileDropdown user={user} onLogout={logout} onNavigate={handleTabChange} />

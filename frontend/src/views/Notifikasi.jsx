@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { Bell, CheckCheck, MessageSquare, TrendingUp, Award, AlertTriangle, Sparkles } from 'lucide-react';
 
-const initialNotifs = [
-  { id: 1, icon: Award, title: 'Hasil Validasi Ide Siap', desc: 'Hasil analisis kelayakan ide bisnis "Kuliner Sehat" sudah tersedia. Cek skor dan rekomendasinya sekarang.', time: '5 menit lalu', read: false, color: '#FF6B1A' },
-  { id: 2, icon: TrendingUp, title: 'Proyeksi ROI Diperbarui', desc: 'Simulasi BEP terbaru menunjukkan potensi balik modal dalam 4 bulan dengan skenario optimis.', time: '1 jam lalu', read: false, color: '#10B981' },
-  { id: 3, icon: MessageSquare, title: 'Diskusi Baru di Forum', desc: 'Anggota @andi_bakso membalas thread "Cara memilih lokasi usaha kuliner pinggir jalan".', time: '3 jam lalu', read: true, color: '#3B82F6' },
-  { id: 4, icon: AlertTriangle, title: 'Kenaikan Harga Beras', desc: 'Harga beras premium naik 5% dalam sepekan terakhir. Sesuaikan HPP produksi Anda.', time: '1 hari lalu', read: true, color: '#EF4444' },
-  { id: 5, icon: Sparkles, title: 'Tips Bisnis: Manajemen Modal', desc: 'Panduan baru: cara mengelola modal awal UMKM agar tidak bangkrut di 3 bulan pertama.', time: '2 hari lalu', read: true, color: '#8B5CF6' },
-];
+import { fetchApi } from '../services/apiClient';
 
 function NotifItem({ notif, onMarkRead }) {
-  const Icon = notif.icon;
+  // Assign default icon/color based on type
+  let Icon = MessageSquare;
+  let color = '#3B82F6';
+  if (notif.type === 'validasi') { Icon = Award; color = '#FF6B1A'; }
+  else if (notif.type === 'simulasi') { Icon = TrendingUp; color = '#10B981'; }
+  else if (notif.type === 'sistem') { Icon = Sparkles; color = '#8B5CF6'; }
+
   return (
     <div className={`bg-white rounded-[20px] border ${notif.read ? 'border-[#E8E8E8]' : 'border-[#FF6B1A]/30 bg-[#FF6B1A]/[0.02]'} shadow-sm p-5 flex items-start gap-4 transition-all hover:shadow-md press`}>
-      <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${notif.color}15` }}>
-        <Icon className="w-5 h-5" style={{ color: notif.color }} />
+      <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${color}15` }}>
+        <Icon className="w-5 h-5" style={{ color: color }} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
@@ -32,21 +32,62 @@ function NotifItem({ notif, onMarkRead }) {
   );
 }
 
-export default function Notifikasi() {
-  const [notifs, setNotifs] = useState(initialNotifs);
+export default function Notifikasi({ user, onOpenAuth }) {
+  const [notifs, setNotifs] = useState([]);
   const [filter, setFilter] = useState('all');
+
+  React.useEffect(() => {
+    if (user) {
+      fetchApi('/api/notifications')
+        .then(data => {
+          setNotifs(data.map(n => ({
+            id: n.id,
+            title: n.title,
+            desc: n.pesan,
+            read: n.is_read,
+            type: n.type,
+            time: new Date(n.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+          })));
+        })
+        .catch(console.error);
+    }
+  }, [user]);
 
   const unreadCount = notifs.filter(n => !n.read).length;
 
-  const markAsRead = (id) => {
-    setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const markAsRead = async (id) => {
+    try {
+      await fetchApi(`/api/notifications/${id}/read`, { method: 'PATCH' });
+      setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const markAllRead = () => {
-    setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+  const markAllRead = async () => {
+    const unreadNotifs = notifs.filter(n => !n.read);
+    try {
+      await Promise.all(unreadNotifs.map(n => fetchApi(`/api/notifications/${n.id}/read`, { method: 'PATCH' })));
+      setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const filtered = filter === 'unread' ? notifs.filter(n => !n.read) : notifs;
+
+  if (!user) {
+    return (
+      <div className="space-y-8 animate-fade-in text-center py-20">
+        <Bell className="w-16 h-16 text-[#FF6B1A] mx-auto mb-4 opacity-50" />
+        <h2 className="text-2xl font-extrabold text-[#171C38]">Silakan Masuk</h2>
+        <p className="text-sm text-[#6F7178] max-w-sm mx-auto mb-6">Anda perlu masuk ke akun Perintis untuk melihat notifikasi dan pembaruan dari aktivitas Anda.</p>
+        <button onClick={onOpenAuth} className="btn-primary text-sm px-8 py-3">
+          Masuk / Daftar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in text-left">

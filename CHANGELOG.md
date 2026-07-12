@@ -28,6 +28,11 @@ Format mengikuti [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - File eksperimen `backend/test_*.py` sekarang dimasukkan ke `.gitignore` untuk mencegah script testing naik ke repo.
 
+### Fixed
+- **Sync/Async Await Error**: Memperbaiki 500 error di `/api/validate` karena salah penggunaan `await` pada fungsi sinkronus `validate_business_idea`. Handler diturunkan menjadi `def` biasa untuk sinkronisasi Database dengan aman.
+- **Badge Notifikasi Hardcoded**: Mengoper _unread count_ notifikasi dari `App.jsx` ke `Header.jsx` dan `ProfileMenu.jsx` agar ikon *badge* tidak lagi tertahan di angka "3" atau "2" secara statis, melainkan tersinkron dengan jumlah notifikasi belum terbaca secara aktual dari API dan hilang saat belum login.
+- **Persistensi Profil**: Mengupdate schema profil API (`/api/profile/stats`) untuk tidak sekadar menampilkan statistik, namun juga memasukkan _name, email, phone, bio_. Diikuti penyesuaian di `ProfilSaya.jsx` Frontend agar _fetching_ form berlandaskan pada data otentik _database_ (mengatasi isu _form resetting_ setelah perubahan dan perpindahan halaman).
+
 ---
 
 ## [0.4.0] — feat/auth-system

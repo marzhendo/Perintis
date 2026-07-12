@@ -1,49 +1,10 @@
 import React, { useState } from 'react';
 import { MessageSquare, ThumbsUp, Plus, Search, MessageCircle, User, ArrowLeft, X } from 'lucide-react';
 
-const INITIAL_THREADS = [
-  {
-    id: 1,
-    title: 'Bagaimana cara menentukan HPP Kedai Kopi Susu di pinggir jalan?',
-    author: 'Andi Saputra',
-    authorBadge: 'Pendiri UMKM',
-    category: 'Kuliner',
-    date: '10 Juli 2026',
-    snippet: 'Saya baru memulai bisnis kopi susu di Jakarta Selatan. Biaya sewa kios bulanan lumayan tinggi, sekitar 2 juta. Saya bingung membagi biaya sewa ini ke HPP per cup kopi susu. Ada yang punya saran?',
-    likes: 18,
-    replies: [
-      { id: 1, author: 'Budi Santoso', badge: 'Ahli Finansial', text: 'Saran saya, hitung target penjualan cup per bulan dulu. Misalnya target 1.000 cup. Maka biaya sewa per cup adalah Rp 2.000. Jumlahkan ini dengan bahan baku per porsi.', date: '10 Juli 2026' },
-      { id: 2, author: 'AI Advisor', badge: 'Asisten Perintis', text: 'Berdasarkan data harga susu dan kopi terbaru di Dashboard Harga Pangan, rata-rata HPP bahan baku per cup berkisar Rp 6.500 - Rp 7.500. Ditambah sewa Rp 2.000, HPP total Anda sekitar Rp 9.000.', date: '11 Juli 2026' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'Fluktuasi harga cabai rawit merah hari ini, apa alternatif penggantinya?',
-    author: 'Siti Rahma',
-    authorBadge: 'Sangat Aktif',
-    category: 'Bahan Baku',
-    date: '9 Juli 2026',
-    snippet: 'Harga cabai rawit melesat tajam hari ini menjadi Rp 45.000/kg. Untuk usaha warung geprek saya, ini sangat menekan margin keuntungan. Adakah trik agar rasa pedas tetap khas tanpa boncos?',
-    likes: 12,
-    replies: [
-      { id: 1, author: 'Chef Rian', badge: 'Kuliner Pro', text: 'Bisa dicampur dengan cabai kering kering giling mas. Rasa pedasnya tetap kuat, dan harganya jauh lebih stabil.', date: '9 Juli 2026' }
-    ]
-  },
-  {
-    id: 3,
-    title: 'Rekomendasi platform pinjaman modal awal UMKM bunga rendah',
-    author: 'Rico Wijaya',
-    authorBadge: 'Pendiri Baru',
-    category: 'Pendanaan',
-    date: '8 Juli 2026',
-    snippet: 'Saya sedang membutuhkan modal tambahan sekitar 15 juta untuk ekspansi waralaba gerobak martabak saya. Apakah KUR dari Bank Mandiri/BRI saat ini paling recommended?',
-    likes: 9,
-    replies: []
-  }
-];
+import { fetchApi } from '../services/apiClient';
 
-export default function ForumTerbuka() {
-  const [threads, setThreads] = useState(INITIAL_THREADS);
+export default function ForumTerbuka({ user, onOpenAuth }) {
+  const [threads, setThreads] = useState([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Semua');
   const [activeThread, setActiveThread] = useState(null);
@@ -58,6 +19,47 @@ export default function ForumTerbuka() {
 
   const categories = ['Semua', 'Kuliner', 'Bahan Baku', 'Pendanaan', 'Operasional'];
 
+  // Load threads
+  React.useEffect(() => {
+    fetchApi('/api/forum/threads')
+      .then(data => {
+        // Map backend keys to frontend keys
+        setThreads(data.map(t => ({
+          id: t.id,
+          title: t.title,
+          author: t.author.name,
+          authorBadge: t.author.badge,
+          category: t.category,
+          date: new Date(t.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+          snippet: t.content,
+          likes: t.likes_count,
+          repliesCount: t.comments_count,
+          is_liked: t.is_liked_by_me,
+          replies: [] // will fetch on open
+        })));
+      })
+      .catch(console.error);
+  }, [user]);
+
+  // Handle open thread
+  const handleOpenThread = async (thread) => {
+    setActiveThread(thread);
+    try {
+      const comments = await fetchApi(`/api/forum/threads/${thread.id}/comments`);
+      const mappedComments = comments.map(c => ({
+        id: c.id,
+        author: c.author.name,
+        badge: c.author.badge,
+        text: c.content,
+        date: new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+      }));
+      setActiveThread(prev => prev && prev.id === thread.id ? { ...prev, replies: mappedComments } : prev);
+      setThreads(prev => prev.map(t => t.id === thread.id ? { ...t, replies: mappedComments } : t));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const filteredThreads = threads.filter((t) => {
     const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase()) || 
                           t.snippet.toLowerCase().includes(search.toLowerCase());
@@ -65,61 +67,106 @@ export default function ForumTerbuka() {
     return matchesSearch && matchesCat;
   });
 
-  const handleLike = (id, e) => {
+  const handleLike = async (id, e) => {
     e.stopPropagation();
-    setThreads(threads.map((t) => t.id === id ? { ...t, likes: t.likes + 1 } : t));
+    if (!user) return onOpenAuth();
+
+    // Optimistic UI
+    const thread = threads.find(t => t.id === id);
+    const isLiking = !thread.is_liked;
+    
+    setThreads(threads.map((t) => t.id === id ? { ...t, likes: isLiking ? t.likes + 1 : t.likes - 1, is_liked: isLiking } : t));
     if (activeThread && activeThread.id === id) {
-      setActiveThread({ ...activeThread, likes: activeThread.likes + 1 });
+      setActiveThread(prev => ({ ...prev, likes: isLiking ? prev.likes + 1 : prev.likes - 1, is_liked: isLiking }));
+    }
+
+    try {
+      await fetchApi(`/api/forum/threads/${id}/like`, { method: 'POST' });
+    } catch (err) {
+      // Revert if error
+      setThreads(threads.map((t) => t.id === id ? { ...t, likes: isLiking ? t.likes - 1 : t.likes + 1, is_liked: !isLiking } : t));
+      if (activeThread && activeThread.id === id) {
+        setActiveThread(prev => ({ ...prev, likes: isLiking ? prev.likes - 1 : prev.likes + 1, is_liked: !isLiking }));
+      }
     }
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
+    if (!user) return onOpenAuth();
     if (!newComment.trim()) return;
-    const newReply = {
-      id: Date.now(),
-      author: 'Pengguna Perintis',
-      badge: 'Pendiri Baru',
-      text: newComment,
-      date: 'Hari Ini'
-    };
-    
-    const updatedThreads = threads.map((t) => {
-      if (t.id === activeThread.id) {
-        return {
-          ...t,
-          replies: [...t.replies, newReply]
-        };
-      }
-      return t;
-    });
 
-    setThreads(updatedThreads);
-    setActiveThread({
-      ...activeThread,
-      replies: [...activeThread.replies, newReply]
-    });
-    setNewComment('');
+    try {
+      const res = await fetchApi(`/api/forum/threads/${activeThread.id}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ content: newComment })
+      });
+      
+      const newReply = {
+        id: res.id,
+        author: res.author.name,
+        badge: res.author.badge,
+        text: res.content,
+        date: new Date(res.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+      };
+      
+      const updatedThreads = threads.map((t) => {
+        if (t.id === activeThread.id) {
+          return {
+            ...t,
+            replies: [...(t.replies || []), newReply],
+            repliesCount: t.repliesCount + 1
+          };
+        }
+        return t;
+      });
+
+      setThreads(updatedThreads);
+      setActiveThread(prev => ({
+        ...prev,
+        replies: [...(prev.replies || []), newReply],
+        repliesCount: prev.repliesCount + 1
+      }));
+      setNewComment('');
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const handleCreateThread = (e) => {
+  const handleCreateThread = async (e) => {
     e.preventDefault();
+    if (!user) return onOpenAuth();
     if (!newThreadForm.title.trim() || !newThreadForm.snippet.trim()) return;
 
-    const newThread = {
-      id: Date.now(),
-      title: newThreadForm.title,
-      author: 'Pengguna Perintis',
-      authorBadge: 'Pendiri Baru',
-      category: newThreadForm.category,
-      date: 'Baru Saja',
-      snippet: newThreadForm.snippet,
-      likes: 0,
-      replies: []
-    };
+    try {
+      const res = await fetchApi('/api/forum/threads', {
+        method: 'POST',
+        body: JSON.stringify({
+          title: newThreadForm.title,
+          category: newThreadForm.category,
+          content: newThreadForm.snippet
+        })
+      });
 
-    setThreads([newThread, ...threads]);
-    setModalOpen(false);
-    setNewThreadForm({ title: '', category: 'Kuliner', snippet: '' });
+      const newThread = {
+        id: res.id,
+        title: res.title,
+        author: res.author.name,
+        authorBadge: res.author.badge,
+        category: res.category,
+        date: 'Baru Saja',
+        snippet: res.content,
+        likes: 0,
+        repliesCount: 0,
+        is_liked: false,
+        replies: []
+      };
+
+      setThreads([newThread, ...threads]);
+      setModalOpen(false);
+      setNewThreadForm({ title: '', category: 'Kuliner', snippet: '' });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
@@ -132,7 +179,10 @@ export default function ForumTerbuka() {
         </div>
         {!activeThread && (
           <button
-            onClick={() => setModalOpen(true)}
+            onClick={() => {
+              if (!user) return onOpenAuth();
+              setModalOpen(true);
+            }}
             className="btn-primary text-sm px-6 py-3.5 flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
@@ -182,23 +232,23 @@ export default function ForumTerbuka() {
             <div className="flex items-center gap-4 pt-4 border-t border-[#E8E8E8]/50">
               <button 
                 onClick={(e) => handleLike(activeThread.id, e)}
-                className="flex items-center gap-1.5 text-[#6F7178] hover:text-[#FF6B1A] transition-colors text-xs font-bold"
+                className={`flex items-center gap-1.5 transition-colors text-xs font-bold ${activeThread.is_liked ? 'text-[#FF6B1A]' : 'text-[#6F7178] hover:text-[#FF6B1A]'}`}
               >
-                <ThumbsUp className="w-4 h-4" />
+                <ThumbsUp className={`w-4 h-4 ${activeThread.is_liked ? 'fill-current' : ''}`} />
                 <span>{activeThread.likes} Suka</span>
               </button>
               <div className="flex items-center gap-1.5 text-[#6F7178] text-xs font-bold">
                 <MessageCircle className="w-4 h-4" />
-                <span>{activeThread.replies.length} Komentar</span>
+                <span>{activeThread.repliesCount} Komentar</span>
               </div>
             </div>
           </div>
 
           {/* Comments List */}
           <div className="space-y-4 w-full">
-            <h4 className="text-sm font-bold text-[#171C38] uppercase tracking-wider pl-1">Tanggapan ({activeThread.replies.length})</h4>
+            <h4 className="text-sm font-bold text-[#171C38] uppercase tracking-wider pl-1">Tanggapan ({activeThread.repliesCount})</h4>
             
-            {activeThread.replies.map((reply) => (
+            {(activeThread.replies || []).map((reply) => (
               <div key={reply.id} className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-5 flex items-start gap-4 text-left w-full">
                 <div className="w-8 h-8 rounded-full bg-[#F8ECD2]/50 flex items-center justify-center text-[#6F7178] border border-[#E8E8E8] flex-shrink-0">
                   <User className="w-4 h-4" />
@@ -275,7 +325,7 @@ export default function ForumTerbuka() {
             {filteredThreads.map((thread, i) => (
               <div 
                 key={thread.id}
-                onClick={() => setActiveThread(thread)}
+                onClick={() => handleOpenThread(thread)}
                 className={`bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 hover:-translate-y-1 hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col gap-4 text-left w-full group card-lift press animate-slide-up delay-${Math.min(i + 1, 8)}`}
               >
                 <div className="flex justify-between items-start">
@@ -295,14 +345,14 @@ export default function ForumTerbuka() {
                 <div className="flex items-center gap-4 pt-3 border-t border-[#E8E8E8]/40 text-[11px] font-bold text-[#6F7178]">
                   <button 
                     onClick={(e) => handleLike(thread.id, e)}
-                    className="flex items-center gap-1 hover:text-[#FF6B1A] transition-colors"
+                    className={`flex items-center gap-1 transition-colors ${thread.is_liked ? 'text-[#FF6B1A]' : 'hover:text-[#FF6B1A]'}`}
                   >
-                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <ThumbsUp className={`w-3.5 h-3.5 ${thread.is_liked ? 'fill-current' : ''}`} />
                     <span>{thread.likes} Suka</span>
                   </button>
                   <div className="flex items-center gap-1">
                     <MessageSquare className="w-3.5 h-3.5" />
-                    <span>{thread.replies.length} Tanggapan</span>
+                    <span>{thread.repliesCount} Tanggapan</span>
                   </div>
                 </div>
               </div>

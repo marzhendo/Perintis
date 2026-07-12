@@ -62,6 +62,10 @@ class UserActivityResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 class ProfileStatsResponse(BaseModel):
+    name: str
+    email: str
+    phone: str | None = None
+    bio: str | None = None
     validasi_count: int
     simulasi_count: int
     forum_count: int
