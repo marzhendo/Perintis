@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Mail, Lock, User, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { fetchApi } from '../services/apiClient';
 
+const hasMinLength = (pw) => pw.length >= 8;
+const hasLetterAndNumber = (pw) => /[a-zA-Z]/.test(pw) && /[0-9]/.test(pw);
+
 function validate(form, mode) {
   const errors = {};
   if (!form.email.trim()) {
@@ -11,8 +14,10 @@ function validate(form, mode) {
   }
   if (!form.password) {
     errors.password = 'Password wajib diisi';
-  } else if (form.password.length < 6) {
-    errors.password = 'Password minimal 6 karakter';
+  } else if (mode === 'register') {
+    if (!hasMinLength(form.password) || !hasLetterAndNumber(form.password)) {
+      errors.password = 'Password minimal 8 karakter dan harus mengandung kombinasi huruf serta angka';
+    }
   }
   if (mode === 'register') {
     if (!form.name.trim()) {
@@ -31,6 +36,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const [success, setSuccess] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
+  const [showPasswordHint, setShowPasswordHint] = useState(false);
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const inputRef = useRef(null);
@@ -229,9 +235,11 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                   <Lock className="w-4 h-4 text-[#6F7178] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type={showPw ? 'text' : 'password'}
-                    placeholder="Minimal 6 karakter"
+                    placeholder={mode === 'register' ? "Buat password" : "Masukkan password"}
                     value={form.password}
                     onChange={(e) => update('password', e.target.value)}
+                    onFocus={() => mode === 'register' && setShowPasswordHint(true)}
+                    onBlur={() => setShowPasswordHint(false)}
                     className={inputClass('password')}
                     autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   />
@@ -243,6 +251,23 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                   >
                     {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
+
+                  {mode === 'register' && showPasswordHint && (
+                    <div className="absolute top-full left-0 mt-2 w-full bg-white border border-[#E8E8E8] shadow-[0_4px_12px_rgba(23,28,56,0.08)] rounded-xl p-3 z-50 animate-scale-in pointer-events-none">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className={`w-4 h-4 flex-shrink-0 transition-colors ${hasMinLength(form.password) ? 'text-green-500' : 'text-[#D1D1D1]'}`} />
+                        <span className={`text-xs font-semibold transition-colors ${hasMinLength(form.password) ? 'text-[#171C38]' : 'text-[#6F7178]'}`}>
+                          Minimal 8 karakter
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className={`w-4 h-4 flex-shrink-0 transition-colors ${hasLetterAndNumber(form.password) ? 'text-green-500' : 'text-[#D1D1D1]'}`} />
+                        <span className={`text-xs font-semibold transition-colors ${hasLetterAndNumber(form.password) ? 'text-[#171C38]' : 'text-[#6F7178]'}`}>
+                          Kombinasi huruf & angka
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 {errors.password && <p className="text-[10px] font-semibold text-red-500 mt-1 ml-1">{errors.password}</p>}
               </div>

@@ -43,7 +43,20 @@ function ChannelButton({ value, selected }) {
   );
 }
 
-export default function ValidatorForm({ form, setForm, loading, onAnalyze, formatRupiah, handleCheckboxChange }) {
+export default function ValidatorForm({ 
+  form, 
+  setForm, 
+  loading, 
+  onAnalyze, 
+  formatRupiah, 
+  handleCheckboxChange, 
+  provinsiList = [], 
+  kabupatenList = [], 
+  kecamatanList = [], 
+  onProvinsiChange, 
+  onKabupatenChange, 
+  onKecamatanChange 
+}) {
   return (
     <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
       <div>
@@ -56,6 +69,72 @@ export default function ValidatorForm({ form, setForm, loading, onAnalyze, forma
           className="w-full bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-sm font-semibold text-[#171C38] placeholder:text-[#6F7178] mb-3 transition-all focus-ring"
         />
         <ChipGroup options={CATEGORIES} value={form.category} onChange={(cat) => setForm({ ...form, category: cat })} />
+      </div>
+
+      <div className="space-y-3">
+        <label className="block text-sm font-bold text-[#171C38]">Lokasi Usaha</label>
+        
+        {/* Dropdown Provinsi */}
+        <div>
+          <label htmlFor="location-provinsi" className="block text-[11px] font-semibold text-[#6F7178] mb-1">Provinsi</label>
+          <select
+            id="location-provinsi"
+            value={form.locationProvince}
+            onChange={(e) => onProvinsiChange(e.target.value)}
+            className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-medium focus-ring"
+          >
+            <option value="Seluruh Indonesia">Seluruh Indonesia (Semua Wilayah)</option>
+            {provinsiList.map((p) => (
+              <option key={p.id} value={p.nama}>
+                {p.nama}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Dropdown Kabupaten/Kota */}
+        {form.locationProvince && form.locationProvince !== 'Seluruh Indonesia' && (
+          <div className="animate-fade-in">
+            <label htmlFor="location-kabupaten" className="block text-[11px] font-semibold text-[#6F7178] mb-1">Kabupaten/Kota</label>
+            <select
+              id="location-kabupaten"
+              value={form.locationKabupaten}
+              onChange={(e) => onKabupatenChange(e.target.value)}
+              className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-medium focus-ring"
+            >
+              <option value="">-- Pilih Kabupaten/Kota --</option>
+              {kabupatenList.map((k) => (
+                <option key={k.id} value={k.nama}>
+                  {k.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Dropdown Kecamatan */}
+        {form.locationProvince && form.locationProvince !== 'Seluruh Indonesia' && form.locationKabupaten && (
+          <div className="animate-fade-in">
+            <label htmlFor="location-kecamatan" className="block text-[11px] font-semibold text-[#6F7178] mb-1">Kecamatan</label>
+            <select
+              id="location-kecamatan"
+              value={form.locationKecamatan}
+              onChange={(e) => onKecamatanChange(e.target.value)}
+              className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-medium focus-ring"
+            >
+              <option value="">-- Pilih Kecamatan --</option>
+              {kecamatanList.map((k) => (
+                <option key={k.id} value={k.nama}>
+                  {k.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <p className="text-[10px] text-[#6F7178] font-semibold mt-1">
+          * Lokasi berjenjang membantu AI mengevaluasi potensi pasar daerah, tingkat kompetisi lokal, dan ketersediaan rantai pasok wilayah setempat secara sangat spesifik.
+        </p>
       </div>
 
       <div>

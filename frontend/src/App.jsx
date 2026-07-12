@@ -61,7 +61,7 @@ export default function App() {
       case 'home': return <LandingPage setActiveTab={handleTabChange} />;
       case 'harga': return <HargaPangan region={selectedRegion} />;
       case 'lokasi': return <LokasiPasar setSelectedRegion={setSelectedRegion} onNavigate={handleTabChange} />;
-      case 'validator': return <Validator validationData={validationData} setValidationData={setValidationData} />;
+      case 'validator': return <Validator validationData={validationData} setValidationData={setValidationData} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} />;
       case 'calculator': return <Calculator calculationData={calculationData} setCalculationData={setCalculationData} />;
       case 'forum': return <ForumTerbuka user={user} onOpenAuth={() => setAuthModalOpen(true)} />;
       case 'roi': return <ROIProjections calculationData={calculationData} />;
