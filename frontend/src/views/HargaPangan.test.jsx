@@ -16,21 +16,21 @@ describe('HargaPangan Component', () => {
   it('renders commodities and lists them', async () => {
     render(<WrapHargaPangan />);
     await waitFor(() => {
-      expect(screen.getAllByText('Beras Premium')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Beras Kualitas Bawah I')[0]).toBeInTheDocument();
     });
-    expect(screen.getAllByText('Cabai Rawit')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Cabai Rawit Merah')[0]).toBeInTheDocument();
   });
 
   it('filters commodity list based on search input', async () => {
     render(<WrapHargaPangan />);
     await waitFor(() => {
-      expect(screen.getAllByText('Beras Premium')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Beras Kualitas Bawah I')[0]).toBeInTheDocument();
     });
     
     const searchInput = screen.getByPlaceholderText('Cari komoditas...');
     fireEvent.change(searchInput, { target: { value: 'Cabai' } });
     
-    expect(screen.getAllByText('Cabai Rawit')[0]).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Beras Premium' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('Cabai Rawit Merah')[0]).toBeInTheDocument();
+    expect(screen.queryByText('Beras Kualitas Bawah I')).not.toBeInTheDocument();
   });
 });
