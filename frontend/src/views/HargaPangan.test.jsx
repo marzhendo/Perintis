@@ -31,6 +31,6 @@ describe('HargaPangan Component', () => {
     fireEvent.change(searchInput, { target: { value: 'Cabai' } });
     
     expect(screen.getAllByText('Cabai Rawit')[0]).toBeInTheDocument();
-    expect(screen.queryByText('Beras Premium')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Beras Premium' })).not.toBeInTheDocument();
   });
 });

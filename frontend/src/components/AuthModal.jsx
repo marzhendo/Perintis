@@ -106,28 +106,28 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   };
 
   const inputClass = (key) =>
-    `w-full bg-white border ${errors[key] ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-[#E8E8E8] focus:border-[#FF6B1A] focus:ring-[#FF6B1A]/10'} focus:outline-none focus:ring-2 rounded-[18px] py-2.5 pl-10 pr-10 text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] transition-all focus-ring`;
+    `w-full bg-[#171C38]/5 border ${errors[key] ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-[#FF6B1A]/20 focus:border-[#FF6B1A] focus:ring-[#FF6B1A]/10'} focus:outline-none focus:ring-2 rounded-[18px] py-2.5 pl-10 pr-10 text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] transition-all focus-ring`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(23, 28, 56, 0.4)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171C38]/85 backdrop-blur-sm animate-fade-in">
       <div className="absolute inset-0" />
-      <div className="relative w-full max-w-md bg-white rounded-[24px] p-6 md:p-8 shadow-[0_8px_32px_rgba(23,28,56,0.12)] animate-scale-in text-left">
+      <div className="relative w-full max-w-md bg-[#FAF6EE]/95 border border-[#FF6B1A]/20 shadow-2xl shadow-orange-500/10 rounded-[24px] p-6 md:p-8 animate-scale-in text-left">
         <button
           onClick={() => { onClose(); resetForm(); }}
-          className="absolute right-4 top-4 text-[#6F7178] hover:text-[#171C38] p-1.5 rounded-full hover:bg-[#F8ECD2]/50 transition-colors focus-ring"
+          className="absolute right-4 top-4 text-[#6F7178] hover:text-[#171C38] p-1.5 rounded-full hover:bg-[#171C38]/10 transition-colors focus-ring"
         >
           <X className="w-5 h-5" />
         </button>
 
         {success ? (
           <div className="flex flex-col items-center justify-center py-10 text-center animate-bounce-in">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(255, 107, 26, 0.1)' }}>
+            <div className="w-16 h-16 rounded-full bg-[#FF6B1A]/10 flex items-center justify-center mb-4 border border-[#FF6B1A]/20 shadow-[0_0_10px_rgba(0,242,254,0.2)]">
               <CheckCircle className="w-10 h-10 text-[#FF6B1A]" />
             </div>
             <h3 className="text-xl font-extrabold text-[#171C38] mb-1">
               {mode === 'login' ? 'Masuk Berhasil!' : 'Akun Berhasil Dibuat!'}
             </h3>
-            <p className="text-sm text-[#6F7178]">Selamat datang kembali di Perintis.</p>
+            <p className="text-sm text-[#6F7178] font-medium">Selamat datang kembali di Perintis.</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -135,7 +135,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               <h3 className="text-xl font-extrabold text-[#171C38]">
                 {mode === 'login' ? 'Masuk ke Perintis' : 'Buat Akun Perintis'}
               </h3>
-              <p className="text-xs text-[#6F7178] mt-1">
+              <p className="text-xs text-[#6F7178] mt-1 font-medium">
                 {mode === 'login'
                   ? 'Akses semua fitur dan riwayat analisis bisnis Anda.'
                   : 'Mulai perjalanan bisnis UMKM Anda dengan bantuan AI.'}
@@ -143,13 +143,13 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             </div>
 
             {/* Mode Toggle */}
-            <div className="flex bg-[#F8ECD2]/50 rounded-2xl p-1">
+            <div className="flex bg-[#171C38]/5 border border-[#E8E8E8] rounded-2xl p-1">
               {['login', 'register'].map((m) => (
                 <button
                   key={m}
                   onClick={() => switchMode(m)}
                   className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all press-sm ${
-                    mode === m ? 'bg-white text-[#171C38] shadow-sm' : 'text-[#6F7178] hover:text-[#171C38]'
+                    mode === m ? 'bg-[#FF6B1A]/20 text-[#FF6B1A] border border-[#FF6B1A]/30 shadow-[0_0_10px_rgba(0,242,254,0.1)]' : 'text-[#6F7178] hover:text-[#171C38] border border-transparent'
                   }`}
                 >
                   {m === 'login' ? 'Masuk' : 'Daftar'}
@@ -159,9 +159,9 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
             {/* General Error */}
             {errors.general && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-2xl p-3">
-                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                <p className="text-xs font-semibold text-red-600">{errors.general}</p>
+              <div className="flex items-center gap-2 bg-red-950/20 border border-red-500/25 rounded-2xl p-3">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <p className="text-xs font-semibold text-red-400">{errors.general}</p>
               </div>
             )}
 
@@ -170,7 +170,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               disabled={true}
               type="button"
               title="Segera Hadir"
-              className="w-full bg-white text-[#171C38] font-semibold text-sm border border-[#E8E8E8] rounded-[18px] py-3 px-4 shadow-sm opacity-50 cursor-not-allowed flex items-center justify-center gap-3 transition-all"
+              className="w-full bg-[#171C38]/5 text-[#6F7178] font-semibold text-sm border border-[#E8E8E8] rounded-[18px] py-3 px-4 shadow-sm opacity-40 cursor-not-allowed flex items-center justify-center gap-3 transition-all"
             >
               <svg className="w-5 h-5 grayscale" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -190,7 +190,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             <form onSubmit={handleEmailAuth} className="space-y-4" noValidate>
               {mode === 'register' && (
                 <div>
-                  <label className="block text-xs font-bold text-[#171C38] mb-1.5">Nama Lengkap</label>
+                  <label className="block text-xs font-bold text-[#6F7178] mb-1.5">Nama Lengkap</label>
                   <div className="relative">
                     <User className="w-4 h-4 text-[#6F7178] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -203,12 +203,12 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                       autoComplete="name"
                     />
                   </div>
-                  {errors.name && <p className="text-[10px] font-semibold text-red-500 mt-1 ml-1">{errors.name}</p>}
+                  {errors.name && <p className="text-[10px] font-semibold text-red-400 mt-1 ml-1">{errors.name}</p>}
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-bold text-[#171C38] mb-1.5">Email</label>
+                <label className="block text-xs font-bold text-[#6F7178] mb-1.5">Email</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-[#6F7178] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -224,7 +224,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#171C38] mb-1.5">Password</label>
+                <label className="block text-xs font-bold text-[#6F7178] mb-1.5">Password</label>
                 <div className="relative">
                   <Lock className="w-4 h-4 text-[#6F7178] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
@@ -249,7 +249,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
               {mode === 'register' && (
                 <div>
-                  <label className="block text-xs font-bold text-[#171C38] mb-1.5">Konfirmasi Password</label>
+                  <label className="block text-xs font-bold text-[#6F7178] mb-1.5">Konfirmasi Password</label>
                   <div className="relative">
                     <Lock className="w-4 h-4 text-[#6F7178] absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
@@ -276,11 +276,11 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 bg-gradient-to-r from-[#FF6B1A] to-[#FF8A3D] text-white rounded-[18px] py-3 font-bold text-xs hover:shadow-lg hover:shadow-[#FF6B1A]/20 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2 press"
+                className="w-full mt-2 cyber-btn rounded-[18px] py-3.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
               >
                 {loading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-[#050714] border-t-transparent rounded-full animate-spin" />
                     <span>{mode === 'login' ? 'Memproses...' : 'Mendaftarkan...'}</span>
                   </>
                 ) : (
