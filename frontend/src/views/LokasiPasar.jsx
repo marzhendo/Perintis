@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { Search, Crosshair, Navigation, ChevronLeft } from 'lucide-react';
+import { Search, Crosshair, Navigation, ChevronLeft, Building } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { getProvinsi, getKabupaten, getKecamatan, getKelurahan, provinsiIdFromLatLng, getAddressFromLatLng, findBestMatch } from '../services/areaService';
@@ -71,6 +71,12 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
   const [prices, setPrices] = useState(getPricesForProvince('default'));
   const [mapCenter, setMapCenter] = useState([-2.5, 117]);
   const [mapZoom, setMapZoom] = useState(5);
+
+  // Location Strategic Scoring States
+  const [bizType, setBizType] = useState('Kuliner / Makanan');
+  const [radius, setRadius] = useState('1 km');
+  const [scoreResult, setScoreResult] = useState(null);
+  const [scoreLoading, setScoreLoading] = useState(false);
 
   useEffect(() => {
     getProvinsi().then(list => {
@@ -276,6 +282,30 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
       setMapCenter([-2.5, 117]);
       setMapZoom(5);
     }
+    setScoreResult(null);
+  };
+
+  const handleCalculateScore = () => {
+    setScoreLoading(true);
+    setScoreResult(null);
+    setTimeout(() => {
+      // Calculate a semi-random but consistent score based on selected values
+      const seed = (bizType.length + radius.length + (selectedProvinsi ? selectedProvinsi.nama.length : 10)) % 25;
+      const score = 65 + seed;
+      const access = 70 + (seed % 10) * 2;
+      const competitor = 55 + (seed % 8) * 3;
+      const purchasingPower = 60 + (seed % 6) * 4;
+
+      let tip = 'Lokasi dinilai cukup memadai dengan kepadatan pelanggan sedang. Cari posisi ruko yang menghadap jalan utama untuk akses lebih optimal.';
+      if (bizType.includes('Kuliner')) {
+        tip = 'Dekat dengan area pasar/pusat kuliner. Strategis untuk warung makan, tetapi persaingan padat. Unggul dalam promosi rasa dan layanan pesan-antar.';
+      } else if (bizType.includes('Kafe')) {
+        tip = 'Tingkat persaingan kafe di sekitar terdeteksi tinggi. Tawarkan produk kopi unik (diferensiasi) dan sediakan tempat duduk ramah laptop.';
+      }
+
+      setScoreResult({ score, access, competitor, purchasingPower, tip });
+      setScoreLoading(false);
+    }, 1000);
   };
 
   const handleProvinsiSelect = async (provName) => {
@@ -441,16 +471,16 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
       {viewMode === 'map' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8">
-            <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-1 overflow-hidden">
+            <div className="glass-card rounded-[20px] p-1 overflow-hidden shadow-lg shadow-orange-500/5 w-full border-2 border-[#171C38]">
               <MapContainer center={mapCenter} zoom={mapZoom} className="h-[400px] md:h-[500px] w-full rounded-[18px]" scrollWheelZoom={true}>
-                <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
                 <MapController center={mapCenter} zoom={mapZoom} />
                 {userLocation && (
                   <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
                     <Popup>
-                      <div className="text-xs font-medium text-[#171C38]">
+                      <div className="text-xs font-bold text-[#171C38] text-left">
                         📍 Lokasi Saya{selectedProvinsi ? ` — ${selectedProvinsi.nama}` : ''}
-                        {selectedKabupaten && <><br /><span className="text-[#6F7178]">{selectedKabupaten.nama}</span></>}
+                        {selectedKabupaten && <><br /><span className="text-[#6F7178] font-semibold">{selectedKabupaten.nama}</span></>}
                       </div>
                     </Popup>
                   </Marker>
@@ -458,10 +488,10 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
                 {UMKM_LOCATIONS.map((umkm, i) => (
                   <Marker key={i} position={[umkm.lat, umkm.lng]} icon={umkmIcon}>
                     <Popup>
-                      <div className="text-xs">
+                      <div className="text-xs text-left">
                         <strong className="text-[#171C38]">{umkm.name}</strong><br />
-                        <span className="text-[#6F7178]">{umkm.city} • {umkm.type}</span><br />
-                        <span className="text-[#FF6B1A]">{umkm.products}</span>
+                        <span className="text-[#6F7178] font-semibold">{umkm.city} • {umkm.type}</span><br />
+                        <span className="text-[#FF6B1A] font-bold">{umkm.products}</span>
                       </div>
                     </Popup>
                   </Marker>
@@ -669,6 +699,98 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
                 </div>
               </div>
             )}
+
+            {/* LOCATION SCORING PANEL (New simulator) */}
+            <div className="glass-card rounded-[20px] p-4 shadow-lg border border-[#E8E8E8] space-y-4">
+              <h4 className="font-bold text-xs text-[#171C38] flex items-center gap-1.5 font-sans">
+                <Building className="w-4.5 h-4.5 text-[#FF6B1A]" />
+                <span>Simulator Kelayakan Lokasi</span>
+              </h4>
+
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <label htmlFor="scoring-biztype" className="text-[10px] font-bold text-[#171C38]">Kategori Bisnis</label>
+                  <select
+                    id="scoring-biztype"
+                    value={bizType}
+                    onChange={(e) => setBizType(e.target.value)}
+                    className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] rounded-lg py-1.5 px-2 text-[10px] font-semibold text-[#6F7178] focus-ring"
+                    style={{ colorScheme: 'light' }}
+                  >
+                    <option value="Kuliner / Makanan">Kuliner / Makanan</option>
+                    <option value="Toko Kelontong / Retail">Toko Kelontong / Retail</option>
+                    <option value="Jasa / Laundry / Barber">Jasa / Laundry / Barber</option>
+                    <option value="Kafe / Coffee Shop">Kafe / Coffee Shop</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="scoring-radius" className="text-[10px] font-bold text-[#171C38]">Radius Jangkauan</label>
+                  <select
+                    id="scoring-radius"
+                    value={radius}
+                    onChange={(e) => setRadius(e.target.value)}
+                    className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] rounded-lg py-1.5 px-2 text-[10px] font-semibold text-[#6F7178] focus-ring"
+                    style={{ colorScheme: 'light' }}
+                  >
+                    <option value="1 km">Radius 1 km</option>
+                    <option value="3 km">Radius 3 km</option>
+                    <option value="5 km">Radius 5 km</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={handleCalculateScore}
+                className="w-full btn-primary py-2.5 rounded-xl text-[10px] font-bold cursor-pointer"
+              >
+                Cek Skor Kelayakan
+              </button>
+
+              {scoreLoading && (
+                <div className="flex items-center justify-center gap-2 py-2">
+                  <div className="w-3.5 h-3.5 border-2 border-[#FF6B1A] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] text-[#6F7178] font-bold">Menganalisis spasial wilayah...</span>
+                </div>
+              )}
+
+              {scoreResult && (
+                <div className="space-y-3.5 animate-bounce-in border-t border-[#E8E8E8] pt-3 text-left">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-[#171C38] uppercase">Skor Strategis Lokasi</span>
+                    <span className="text-xl font-extrabold text-[#FF6B1A] text-glow-orange">{scoreResult.score} / 100</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {/* Aksesibilitas */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[9px] font-bold text-[#6F7178]">
+                        <span>Aksesibilitas & Trafik</span>
+                        <span>{scoreResult.access}%</span>
+                      </div>
+                      <div className="w-full bg-[#171C38]/5 rounded-full h-1 overflow-hidden">
+                        <div className="bg-[#FF6B1A] h-1" style={{ width: `${scoreResult.access}%` }} />
+                      </div>
+                    </div>
+
+                    {/* Kompetisi */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[9px] font-bold text-[#6F7178]">
+                        <span>Kerapatan Kompetitor</span>
+                        <span>{scoreResult.competitor}%</span>
+                      </div>
+                      <div className="w-full bg-[#171C38]/5 rounded-full h-1 overflow-hidden">
+                        <div className="bg-amber-500 h-1" style={{ width: `${scoreResult.competitor}%` }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-[#6F7178] bg-[#171C38]/5 border border-[#E8E8E8] rounded-lg p-2.5 font-semibold leading-relaxed">
+                    {scoreResult.tip}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (

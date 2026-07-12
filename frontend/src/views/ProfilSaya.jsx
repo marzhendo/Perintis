@@ -404,7 +404,7 @@ export default function ProfilSaya({ user, onLogout, onOpenAuth }) {
           <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 md:p-8 text-left card-lift">
             <h3 className="font-bold text-[#171C38] text-sm mb-4">Pengaturan Akun</h3>
             <div className="space-y-3">
-              <button onClick={() => setShowPasswordModal(true)} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#F8ECD2]/50 transition-colors text-left press">
+              <button onClick={() => setShowPasswordModal(true)} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#171C38]/5 transition-colors text-left press cursor-pointer">
                 <div className="flex items-center gap-3">
                   <Shield className="w-4 h-4 text-[#6F7178]" />
                   <div>
@@ -414,7 +414,7 @@ export default function ProfilSaya({ user, onLogout, onOpenAuth }) {
                 </div>
                 <svg className="w-4 h-4 text-[#6F7178]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </button>
-              <button disabled type="button" className="w-full flex items-center justify-between p-3 rounded-xl text-left bg-gray-50 border border-transparent opacity-50 cursor-not-allowed">
+              <button disabled type="button" className="w-full flex items-center justify-between p-3 rounded-xl text-left bg-slate-50 border border-transparent opacity-50 cursor-not-allowed">
                 <div className="flex items-center gap-3">
                   <Bell className="w-4 h-4 text-[#6F7178]" />
                   <div>
@@ -424,7 +424,7 @@ export default function ProfilSaya({ user, onLogout, onOpenAuth }) {
                 </div>
                 <svg className="w-4 h-4 text-[#6F7178]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </button>
-              <button onClick={onLogout} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-rose-50 transition-colors text-left press">
+              <button onClick={onLogout} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-rose-500/5 border border-transparent hover:border-rose-500/10 transition-colors text-left press cursor-pointer">
                 <div className="flex items-center gap-3">
                   <LogOut className="w-4 h-4 text-rose-500" />
                   <div>
