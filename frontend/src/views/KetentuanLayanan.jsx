@@ -61,17 +61,17 @@ const sections = [
 
 export default function KetentuanLayanan() {
   return (
-    <div className="space-y-8 animate-fade-in text-left max-w-4xl mx-auto pb-16">
+    <div className="space-y-8 animate-fade-in text-left max-w-4xl mx-auto pb-16 relative z-10">
       {/* Decorative */}
-      <div className="absolute top-20 -right-20 w-80 h-80 bg-[#FF6B1A]/5 rounded-full blur-3xl -z-10 animate-float" />
+      <div className="absolute top-20 -left-20 w-80 h-80 bg-[#FF6B1A]/5 rounded-full blur-3xl -z-10 animate-float" />
 
       <header>
-        <div className="flex items-center gap-3 mb-2">
-          <Scale className="w-6 h-6 text-[#FF6B1A]" />
-          <span className="text-[10px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-3 py-1 rounded-full uppercase tracking-wider">Terakhir diperbarui: 11 Juli 2026</span>
+        <div className="flex items-center gap-3 mb-4">
+          <Scale className="w-6 h-6 text-[#FF6B1A] drop-shadow-[0_0_8px_rgba(0,242,254,0.4)]" />
+          <span className="text-[10px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-3 py-1 rounded-full uppercase tracking-wider border border-[#FF6B1A]/20">Terakhir diperbarui: 11 Juli 2026</span>
         </div>
         <h2 className="text-2xl font-extrabold text-[#171C38] tracking-tight">Ketentuan Layanan</h2>
-        <p className="text-sm text-[#6F7178] mt-2 leading-relaxed">
+        <p className="text-sm text-[#6F7178] mt-2 leading-relaxed font-semibold">
           Ketentuan Layanan ini mengatur hubungan hukum antara Anda ("Pengguna") dan Perintis dalam penggunaan platform,{' '}
           sesuai dengan{' '}
           <strong>Undang-Undang Nomor 11 Tahun 2008 tentang Informasi dan Transaksi Elektronik (UU ITE)</strong>,{' '}
@@ -84,14 +84,14 @@ export default function KetentuanLayanan() {
         {sections.map((s, i) => {
           const Icon = s.icon;
           return (
-            <div key={i} className={`bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 md:p-8 card-lift animate-slide-up delay-${Math.min(i + 1, 8)}`}>
+            <div key={i} className="glass-card rounded-[20px] p-6 md:p-8 animate-slide-up" style={{ animationDelay: `${(i + 1) * 0.08}s` }}>
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-[#FF6B1A]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#FF6B1A]/10 flex items-center justify-center flex-shrink-0 mt-0.5 border border-[#FF6B1A]/10">
                   <Icon className="w-5 h-5 text-[#FF6B1A]" />
                 </div>
                 <div className="space-y-2">
                   <h3 className="font-bold text-base text-[#171C38]">{s.title}</h3>
-                  <p className="text-sm text-[#6F7178] leading-relaxed">{s.content}</p>
+                  <p className="text-sm text-[#6F7178] leading-relaxed font-medium">{s.content}</p>
                 </div>
               </div>
             </div>

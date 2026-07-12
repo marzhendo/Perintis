@@ -9,7 +9,7 @@ Strategi scraping:
    - Berisi harga 34 provinsi untuk 1 komoditas (Beras Kualitas Medium I sebagai default)
    - Data ini disimpan di commodity_prices.json under 'province_beras_medium_1'
 """
-
+from __future__ import annotations
 import json
 import os
 import re
@@ -160,6 +160,7 @@ def _load_price_file() -> dict:
 def _save_price_file(data: dict):
     """Save updated data to commodity_prices.json."""
     path = os.path.join(os.path.dirname(__file__), "..", "data", "commodity_prices.json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 

@@ -11,7 +11,7 @@ Catatan: Data harga per provinsi dari BI hanya tersedia untuk komoditas yang
 sedang ditampilkan di peta vectormap halaman awal (default: Beras Kualitas Medium I).
 Untuk komoditas lain, harga nasional yang digunakan.
 """
-
+from __future__ import annotations
 import json
 import os
 from datetime import datetime

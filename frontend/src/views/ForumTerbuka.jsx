@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { MessageSquare, ThumbsUp, Plus, Search, MessageCircle, User, ArrowLeft, X } from 'lucide-react';
-
 import { fetchApi } from '../services/apiClient';
 
 export default function ForumTerbuka({ user, onOpenAuth }) {
@@ -170,12 +169,12 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in text-left w-full">
+    <div className="space-y-8 animate-fade-in text-left w-full relative z-10">
       {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
         <div>
           <h2 className="text-2xl font-extrabold text-[#171C38] tracking-tight">Forum Terbuka UMKM</h2>
-          <p className="text-sm text-[#6F7178] mt-1">Diskusikan ide bisnis Anda, harga komoditas pokok, dan strategi finansial bersama pelaku usaha lain.</p>
+          <p className="text-sm text-[#6F7178] mt-1 font-semibold">Diskusikan ide bisnis Anda, harga komoditas pokok, dan strategi finansial bersama pelaku usaha lain.</p>
         </div>
         {!activeThread && (
           <button
@@ -183,7 +182,7 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
               if (!user) return onOpenAuth();
               setModalOpen(true);
             }}
-            className="btn-primary text-sm px-6 py-3.5 flex items-center gap-2"
+            className="cyber-btn text-sm px-6 py-3.5 flex items-center gap-2 rounded-xl"
           >
             <Plus className="w-5 h-5" />
             <span>Mulai Diskusi</span>
@@ -204,7 +203,7 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
             <span>Kembali ke Forum</span>
           </button>
 
-          <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 md:p-8 space-y-6 w-full">
+          <div className="glass-card rounded-[20px] p-6 md:p-8 space-y-6 w-full shadow-lg shadow-orange-500/5">
             {/* Thread Owner */}
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
@@ -219,17 +218,17 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
                   <span className="text-[10px] text-[#6F7178] font-semibold">{activeThread.date}</span>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-[#6F7178] bg-[#F8ECD2]/50 border border-[#E8E8E8] px-3 py-1 rounded-full">{activeThread.category}</span>
+              <span className="text-[10px] font-bold text-[#6F7178] bg-[#171C38]/5 border border-[#FF6B1A]/20 px-3 py-1 rounded-full">{activeThread.category}</span>
             </div>
 
             {/* Thread Title & Content */}
             <div className="space-y-3">
               <h3 className="text-lg md:text-xl font-extrabold text-[#171C38] leading-snug">{activeThread.title}</h3>
-              <p className="text-sm text-[#6F7178] leading-relaxed">{activeThread.snippet}</p>
+              <p className="text-sm text-[#6F7178] leading-relaxed font-medium">{activeThread.snippet}</p>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-4 pt-4 border-t border-[#E8E8E8]/50">
+            <div className="flex items-center gap-4 pt-4 border-t border-[#FF6B1A]/10">
               <button 
                 onClick={(e) => handleLike(activeThread.id, e)}
                 className={`flex items-center gap-1.5 transition-colors text-xs font-bold ${activeThread.is_liked ? 'text-[#FF6B1A]' : 'text-[#6F7178] hover:text-[#FF6B1A]'}`}
@@ -249,8 +248,8 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
             <h4 className="text-sm font-bold text-[#171C38] uppercase tracking-wider pl-1">Tanggapan ({activeThread.repliesCount})</h4>
             
             {(activeThread.replies || []).map((reply) => (
-              <div key={reply.id} className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-5 flex items-start gap-4 text-left w-full">
-                <div className="w-8 h-8 rounded-full bg-[#F8ECD2]/50 flex items-center justify-center text-[#6F7178] border border-[#E8E8E8] flex-shrink-0">
+              <div key={reply.id} className="glass-card rounded-[20px] p-5 flex items-start gap-4 text-left w-full">
+                <div className="w-8 h-8 rounded-full bg-[#171C38]/5 flex items-center justify-center text-[#6F7178] border border-[#FF6B1A]/10 flex-shrink-0">
                   <User className="w-4 h-4" />
                 </div>
                 <div className="space-y-1.5 flex-grow">
@@ -259,23 +258,23 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
                     <span className="text-[8px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-2 py-0.5 rounded-full uppercase">{reply.badge}</span>
                     <span className="text-[10px] text-[#6F7178] ml-auto">{reply.date}</span>
                   </div>
-                  <p className="text-xs text-[#6F7178] leading-relaxed">{reply.text}</p>
+                  <p className="text-xs text-[#6F7178] leading-relaxed font-medium">{reply.text}</p>
                 </div>
               </div>
             ))}
 
             {/* Post Comment Input */}
-            <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-4 flex gap-4 items-center w-full">
+            <div className="glass-card rounded-[20px] p-4 flex gap-4 items-center w-full">
               <input 
                 type="text"
                 placeholder="Tulis tanggapan atau saran finansial..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="flex-grow bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-medium focus-ring"
+                className="flex-grow bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] transition-all focus-ring"
               />
               <button 
                 onClick={handleAddComment}
-                className="btn-primary text-xs px-5 py-3"
+                className="cyber-btn text-xs px-5 py-3 rounded-xl"
               >
                 Kirim
               </button>
@@ -287,7 +286,7 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
           {/* Left Side: Filter and Search */}
           <div className="lg:col-span-3 space-y-6 w-full">
-            <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-5 space-y-4 text-left w-full">
+            <div className="glass-card rounded-[20px] p-5 space-y-4 text-left w-full shadow-lg shadow-orange-500/5">
               <h3 className="font-bold text-xs text-[#6F7178] uppercase tracking-wider">Cari & Saring</h3>
               
               <div className="relative w-full">
@@ -297,7 +296,7 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
                   placeholder="Cari topik..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl text-xs font-semibold placeholder:text-[#6F7178] focus-ring"
+                  className="w-full pl-9 pr-3 py-2.5 bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] transition-all focus-ring"
                 />
               </div>
 
@@ -309,8 +308,8 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
                     onClick={() => setCategory(cat)}
                     className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all press-sm ${
                       category === cat
-                        ? 'bg-[#FF6B1A]/10 text-[#FF6B1A] font-bold border-l-2 border-[#FF6B1A]'
-                        : 'text-[#6F7178] hover:bg-[#F8ECD2]/50'
+                        ? 'bg-[#FF6B1A]/10 text-[#FF6B1A] border-l-2 border-[#FF6B1A]'
+                        : 'text-[#6F7178] hover:bg-[#171C38]/5'
                     }`}
                   >
                     {cat}
@@ -326,23 +325,24 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
               <div 
                 key={thread.id}
                 onClick={() => handleOpenThread(thread)}
-                className={`bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 hover:-translate-y-1 hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col gap-4 text-left w-full group card-lift press animate-slide-up delay-${Math.min(i + 1, 8)}`}
+                className="glass-card rounded-[20px] p-6 cursor-pointer flex flex-col gap-4 text-left w-full group card-lift animate-slide-up shadow-lg shadow-orange-500/5"
+                style={{ animationDelay: `${Math.min((i + 1) * 0.1, 0.8)}s` }}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-xs text-[#171C38]">{thread.author}</span>
-                    <span className="text-[9px] font-semibold text-[#FF6B1A] bg-[#FF6B1A]/10 px-2 py-0.5 rounded-full">{thread.authorBadge}</span>
-                    <span className="text-[10px] text-[#6F7178] font-medium ml-2">{thread.date}</span>
+                    <span className="text-[9px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-2 py-0.5 rounded-full">{thread.authorBadge}</span>
+                    <span className="text-[10px] text-[#6F7178] font-semibold ml-2">{thread.date}</span>
                   </div>
-                  <span className="text-[10px] font-bold text-[#6F7178] bg-[#F8ECD2]/50 border border-[#E8E8E8] px-2.5 py-0.5 rounded-full">{thread.category}</span>
+                  <span className="text-[10px] font-bold text-[#6F7178] bg-[#171C38]/5 border border-[#FF6B1A]/20 px-2.5 py-0.5 rounded-full">{thread.category}</span>
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="font-extrabold text-sm md:text-base text-[#171C38] group-hover:text-[#FF6B1A] transition-colors leading-snug">{thread.title}</h3>
-                  <p className="text-xs text-[#6F7178] line-clamp-2 leading-relaxed">{thread.snippet}</p>
+                  <h3 className="font-extrabold text-sm md:text-base text-[#171C38] group-hover:text-[#FF6B1A] transition-colors leading-snug font-sans">{thread.title}</h3>
+                  <p className="text-xs text-[#6F7178] line-clamp-2 leading-relaxed font-medium">{thread.snippet}</p>
                 </div>
 
-                <div className="flex items-center gap-4 pt-3 border-t border-[#E8E8E8]/40 text-[11px] font-bold text-[#6F7178]">
+                <div className="flex items-center gap-4 pt-3 border-t border-[#FF6B1A]/10 text-[11px] font-bold text-[#6F7178]">
                   <button 
                     onClick={(e) => handleLike(thread.id, e)}
                     className={`flex items-center gap-1 transition-colors ${thread.is_liked ? 'text-[#FF6B1A]' : 'hover:text-[#FF6B1A]'}`}
@@ -359,10 +359,10 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
             ))}
 
             {filteredThreads.length === 0 && (
-              <div className="bg-[#F8ECD2]/30 border border-[#E8E8E8] border-dashed rounded-3xl py-12 text-center text-[#6F7178]">
-                <MessageSquare className="w-12 h-12 mx-auto mb-2 stroke-[1.5]" />
+              <div className="bg-[#171C38]/5 border border-[#FF6B1A]/10 border-dashed rounded-3xl py-12 text-center text-[#6F7178] w-full">
+                <MessageSquare className="w-12 h-12 mx-auto mb-2 stroke-[1.5] text-[#6F7178]" />
                 <h4 className="font-bold text-sm text-[#171C38]">Diskusi Tidak Ditemukan</h4>
-                <p className="text-xs text-[#6F7178] mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
+                <p className="text-xs text-[#6F7178] mt-1 font-semibold">Coba gunakan kata kunci pencarian yang lain.</p>
               </div>
             )}
           </div>
@@ -371,13 +371,13 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
 
       {/* CREATE THREAD MODAL */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171C38]/60 animate-fade-in">
-          <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-xl w-full max-w-lg animate-scale-in text-left p-6 md:p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171C38]/80 backdrop-blur-sm animate-fade-in">
+          <div className="glass-card rounded-[20px] w-full max-w-lg animate-scale-in text-left p-6 md:p-8 shadow-2xl shadow-orange-500/10 border border-[#FF6B1A]/30">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-[#171C38]">Mulai Diskusi Baru</h3>
               <button 
                 onClick={() => setModalOpen(false)}
-                className="text-[#6F7178] hover:text-[#171C38] p-1 rounded-full hover:bg-[#F8ECD2]/50 transition-colors"
+                className="text-[#6F7178] hover:text-[#171C38] p-1 rounded-full hover:bg-[#171C38]/10 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -392,7 +392,7 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
                   placeholder="Contoh: Bagaimana tips menjaga kualitas bahan baku sayur agar tidak layu?"
                   value={newThreadForm.title}
                   onChange={(e) => setNewThreadForm({ ...newThreadForm, title: e.target.value })}
-                  className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-semibold focus-ring"
+                  className="w-full bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] transition-all focus-ring"
                 />
               </div>
 
@@ -401,10 +401,11 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
                 <select
                   value={newThreadForm.category}
                   onChange={(e) => setNewThreadForm({ ...newThreadForm, category: e.target.value })}
-                  className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-semibold focus-ring"
+                  className="w-full bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-xs font-semibold text-[#6F7178] transition-all focus-ring"
+                  style={{ colorScheme: 'dark' }}
                 >
                   {categories.slice(1).map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat} className="bg-[#171C38] text-[#171C38]">{cat}</option>
                   ))}
                 </select>
               </div>
@@ -417,13 +418,13 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
                   placeholder="Ceritakan permasalahan, konteks usaha Anda, atau informasi detail yang ingin Anda tanyakan..."
                   value={newThreadForm.snippet}
                   onChange={(e) => setNewThreadForm({ ...newThreadForm, snippet: e.target.value })}
-                  className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-4 text-xs font-semibold resize-none focus-ring"
+                  className="w-full bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-4 text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] resize-none transition-all focus-ring"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full btn-primary text-xs py-3"
+                className="w-full cyber-btn text-xs py-3.5 rounded-xl mt-2"
               >
                 Publikasikan Topik Diskusi
               </button>
@@ -434,5 +435,3 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
     </div>
   );
 }
-
-

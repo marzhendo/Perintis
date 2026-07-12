@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Download, ArrowUp, ArrowDown, MapPin, ChevronDown, ExternalLink } from 'lucide-react';
+import { Search, Download, ArrowUp, ArrowDown, MapPin, ChevronDown, ExternalLink, Calendar, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
 import { fetchCommodities, getFallbackCommodities } from '../services/commodityApi';
 import { useToast } from '../components/Toast';
 import { CardSkeleton, Shimmer } from '../components/LoadingSkeleton';
@@ -16,12 +16,52 @@ const BI_PROVINCES = [
   'Sulawesi Barat', 'Maluku', 'Maluku Utara', 'Papua', 'Papua Barat',
 ];
 
+const SEASONAL_DATA = {
+  'Cabai Rawit': {
+    Jan: 'Tinggi', Feb: 'Tinggi', Mar: 'Sedang', Apr: 'Sedang', Mei: 'Rendah', Jun: 'Rendah',
+    Jul: 'Rendah', Agu: 'Rendah', Sep: 'Rendah', Okt: 'Sedang', Nov: 'Tinggi', Des: 'Tinggi',
+    tip: 'Puncak musim hujan menghambat panen cabai di Nov-Feb. Pertimbangkan stok cabai kering giling atau buat kontrak pasokan sejak Juni.'
+  },
+  'Bawang Merah': {
+    Jan: 'Sedang', Feb: 'Sedang', Mar: 'Tinggi', Apr: 'Tinggi', Mei: 'Sedang', Jun: 'Rendah',
+    Jul: 'Rendah', Agu: 'Rendah', Sep: 'Rendah', Okt: 'Sedang', Nov: 'Sedang', Des: 'Tinggi',
+    tip: 'Harga cenderung melambung tinggi pada akhir tahun dan musim pancaroba (Maret-April). Beli dalam bentuk kering/awetan di bulan Agustus.'
+  },
+  'Daging Ayam': {
+    Jan: 'Rendah', Feb: 'Rendah', Mar: 'Tinggi', Apr: 'Tinggi', Mei: 'Sedang', Jun: 'Rendah',
+    Jul: 'Rendah', Agu: 'Rendah', Sep: 'Rendah', Okt: 'Rendah', Nov: 'Rendah', Des: 'Tinggi',
+    tip: 'Mengalami lonjakan permintaan signifikan menjelang bulan suci Ramadan (Maret-April) dan libur akhir tahun (Desember).'
+  },
+  'Beras Premium': {
+    Jan: 'Tinggi', Feb: 'Tinggi', Mar: 'Sedang', Apr: 'Rendah', Mei: 'Rendah', Jun: 'Rendah',
+    Jul: 'Rendah', Agu: 'Rendah', Sep: 'Rendah', Okt: 'Sedang', Nov: 'Sedang', Des: 'Sedang',
+    tip: 'Musim panen raya padi biasanya terjadi di April-Juni (harga terendah). Lakukan pembelian jumlah besar atau kontrak harga di periode ini.'
+  }
+};
+
+const MONTHS_LIST = [
+  { code: 'Jan', label: 'Jan' },
+  { code: 'Feb', label: 'Feb' },
+  { code: 'Mar', label: 'Mar' },
+  { code: 'Apr', label: 'Apr' },
+  { code: 'Mei', label: 'Mei' },
+  { code: 'Jun', label: 'Jun' },
+  { code: 'Jul', label: 'Jul' },
+  { code: 'Agu', label: 'Agu' },
+  { code: 'Sep', label: 'Sep' },
+  { code: 'Okt', label: 'Okt' },
+  { code: 'Nov', label: 'Nov' },
+  { code: 'Des', label: 'Des' }
+];
+
 export default function HargaPangan({ region }) {
   const [commodities, setCommodities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedProvince, setSelectedProvince] = useState('');
   const [isProvinceOpen, setIsProvinceOpen] = useState(false);
+  const [selectedCommoditySeason, setSelectedCommoditySeason] = useState('Cabai Rawit');
+  const activeSeason = SEASONAL_DATA[selectedCommoditySeason] || SEASONAL_DATA['Cabai Rawit'];
   const toast = useToast();
 
   // Use selectedProvince if set, otherwise fall back to region from props
@@ -202,6 +242,63 @@ export default function HargaPangan({ region }) {
             </div>
           </div>
         ))}
+      </section>
+
+      {/* KALENDER MUSIMAN PANGAN & PREDIKSI HARGA */}
+      <section className="glass-card rounded-[20px] p-6 space-y-6 shadow-lg border border-[#E8E8E8] w-full text-left">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[#E8E8E8] pb-4">
+          <div>
+            <h3 className="text-lg font-bold text-[#171C38] flex items-center gap-2 font-sans">
+              <Calendar className="w-5 h-5 text-[#FF6B1A]" />
+              <span>Kalender Musiman & Risiko Harga Pangan</span>
+            </h3>
+            <p className="text-[10px] text-[#6F7178] font-semibold mt-0.5">Analisis siklus fluktuasi harga pangan tahunan untuk mengantisipasi lonjakan modal belanja.</p>
+          </div>
+          <div className="flex bg-[#171C38]/5 p-1 rounded-2xl border border-[#E8E8E8] overflow-x-auto max-w-full">
+            {Object.keys(SEASONAL_DATA).map((item) => (
+              <button
+                key={item}
+                onClick={() => setSelectedCommoditySeason(item)}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all press-sm cursor-pointer whitespace-nowrap ${
+                  selectedCommoditySeason === item
+                    ? 'bg-[#FF6B1A]/10 text-[#FF6B1A]'
+                    : 'text-[#6F7178] hover:text-[#171C38]'
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 12-Month Risk Grid */}
+        <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-12 gap-3 w-full">
+          {MONTHS_LIST.map((m) => {
+            const risk = activeSeason[m.code];
+            let badgeColor = 'bg-slate-100 text-slate-400 border-slate-200';
+            if (risk === 'Tinggi') badgeColor = 'bg-rose-500/10 text-rose-600 border-rose-500/30';
+            else if (risk === 'Sedang') badgeColor = 'bg-amber-500/10 text-amber-600 border-amber-500/30';
+            else if (risk === 'Rendah') badgeColor = 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
+
+            return (
+              <div key={m.code} className="flex flex-col items-center gap-1.5">
+                <span className="text-[10px] font-bold text-[#6F7178]">{m.label}</span>
+                <div className={`w-full py-2.5 rounded-xl text-[9px] font-extrabold uppercase border text-center ${badgeColor}`}>
+                  {risk}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Seasonal Recommendation Box */}
+        <div className="bg-[#171C38]/5 border border-[#E8E8E8] rounded-xl p-4 flex gap-3 items-start">
+          <Info className="w-5 h-5 text-[#FF6B1A] flex-shrink-0 mt-0.5" />
+          <div className="text-left space-y-1">
+            <h4 className="text-xs font-bold text-[#171C38]">Saran Taktis Mitigasi Risiko Bahan Baku</h4>
+            <p className="text-[11px] text-[#6F7178] leading-relaxed font-semibold">{activeSeason.tip}</p>
+          </div>
+        </div>
       </section>
 
       {/* Historical Data Table */}

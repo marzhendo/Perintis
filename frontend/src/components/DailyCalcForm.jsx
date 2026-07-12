@@ -12,7 +12,7 @@ function RupiahInput({ id, label, value, onChange, description }) {
           type="number"
           value={value}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-          className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-3 pl-12 pr-4 text-sm font-semibold text-[#171C38] focus-ring"
+          className="w-full bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-3 pl-12 pr-4 text-sm font-semibold text-[#171C38] transition-all focus-ring"
         />
       </div>
       {description && <p className="text-[10px] text-[#6F7178] mt-1 leading-normal font-medium">{description}</p>}
@@ -22,11 +22,11 @@ function RupiahInput({ id, label, value, onChange, description }) {
 
 export default function DailyCalcForm({ form, setForm, result, onCalculate }) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
       <div className="lg:col-span-8 flex flex-col gap-6">
-        <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-6 border-b border-[#E8E8E8]/50 pb-4">
-            <div className="bg-emerald-500/10 p-2 rounded-full text-emerald-600 border border-emerald-500/20">
+        <div className="glass-card rounded-[20px] p-6">
+          <div className="flex items-center gap-3 mb-6 border-b border-[#FF6B1A]/10 pb-4">
+            <div className="bg-[#FF6B1A]/10 p-2 rounded-full text-[#FF6B1A] border border-[#FF6B1A]/20">
               <DollarSign className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-base text-[#171C38]">Uang yang Masuk (Pemasukan)</h3>
@@ -42,9 +42,9 @@ export default function DailyCalcForm({ form, setForm, result, onCalculate }) {
           </div>
         </div>
 
-        <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-6 border-b border-[#E8E8E8]/50 pb-4">
-            <div className="bg-rose-500/10 p-2 rounded-full text-rose-600 border border-rose-500/20">
+        <div className="glass-card rounded-[20px] p-6">
+          <div className="flex items-center gap-3 mb-6 border-b border-[#FF6B1A]/10 pb-4">
+            <div className="bg-rose-500/10 p-2 rounded-full text-rose-400 border border-rose-500/20">
               <ShoppingCart className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-base text-[#171C38]">Uang yang Dikeluarkan (Pengeluaran)</h3>
@@ -75,14 +75,14 @@ export default function DailyCalcForm({ form, setForm, result, onCalculate }) {
       </div>
 
       <div className="lg:col-span-4 flex flex-col gap-6">
-        <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6">
+        <div className="glass-card rounded-[20px] p-6 shadow-lg shadow-orange-500/5">
           <h3 className="font-bold text-[#171C38] text-base mb-2">Hasil Keuntungan Harian</h3>
           <p className="text-xs text-[#6F7178] mb-6">Estimasi laba bersih bersih harian Anda setelah dikurangi seluruh pengeluaran operasional.</p>
 
           <div className="flex items-end gap-1 mb-4">
             <span className="text-sm font-bold text-[#FF6B1A] pb-1">Rp</span>
             <span className={`text-3xl font-extrabold tracking-tight ${
-              result ? (result.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600') : 'text-[#FF6B1A]'
+              result ? (result.netProfit >= 0 ? 'text-[#FF6B1A] text-glow-orange' : 'text-rose-400') : 'text-[#FF6B1A]'
             }`}>
               {result ? new Intl.NumberFormat('id-ID').format(result.netProfit) : '0'}
             </span>
@@ -91,28 +91,28 @@ export default function DailyCalcForm({ form, setForm, result, onCalculate }) {
           <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
             result
               ? result.netProfit > 0
-                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                ? 'bg-[#FF6B1A]/10 text-[#FF6B1A] border border-[#FF6B1A]/20 shadow-[0_0_8px_rgba(0,242,254,0.1)]'
                 : result.netProfit < 0
-                  ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                  : 'bg-[#6F7178]/10 text-[#6F7178]'
-              : 'bg-[#F8ECD2]/50 text-[#6F7178]'
+                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                  : 'bg-slate-700 text-[#6F7178]'
+              : 'bg-[#171C38]/5 text-[#6F7178] border border-[#E8E8E8]'
           }`}>
             <span className={`w-2 h-2 rounded-full ${
               result
-                ? result.netProfit > 0 ? 'bg-emerald-500' : result.netProfit < 0 ? 'bg-rose-500' : 'bg-[#6F7178]'
-                : 'bg-[#6F7178]'
+                ? result.netProfit > 0 ? 'bg-[#FF6B1A] shadow-[0_0_6px_#FF6B1A]' : result.netProfit < 0 ? 'bg-rose-500' : 'bg-slate-400'
+                : 'bg-slate-400'
             }`} />
             <span>{result ? result.status : 'Belum Ada Perhitungan'}</span>
           </div>
 
-          <button onClick={onCalculate} className="w-full mt-6 btn-primary text-sm py-3.5">
+          <button onClick={onCalculate} className="w-full mt-6 cyber-btn text-sm py-3.5 rounded-xl">
             Hitung Sekarang
           </button>
         </div>
 
-        <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6">
+        <div className="glass-card rounded-[20px] p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Lightbulb className="w-5 h-5 text-[#FF6B1A]" />
+            <Lightbulb className="w-5 h-5 text-[#FF6B1A] animate-pulse" />
             <h4 className="font-bold text-sm text-[#171C38]">Tips Pengisian</h4>
           </div>
           <ul className="space-y-4 text-xs text-[#6F7178] leading-relaxed">

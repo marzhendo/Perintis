@@ -17,8 +17,8 @@ function ChipGroup({ options, value, onChange, multi }) {
             onClick={() => multi ? onChange(opt) : onChange(opt)}
             className={`px-3 py-2 rounded-xl border text-xs font-semibold transition-all duration-300 press ${
               selected
-                ? 'bg-[#FF6B1A]/10 border-[#FF6B1A]/20 text-[#FF6B1A] font-bold'
-                : 'border-[#E8E8E8] text-[#6F7178] hover:bg-[#F8ECD2]/50'
+                ? 'bg-[#FF6B1A]/10 border-[#FF6B1A]/30 text-[#FF6B1A] font-bold shadow-[0_0_8px_rgba(0,242,254,0.1)]'
+                : 'border-[#E8E8E8] text-[#6F7178] hover:bg-[#171C38]/5 hover:border-[#E8E8E8]'
             }`}
           >
             {multi && selected && <Check className="w-3.5 h-3.5 inline mr-1" />}
@@ -34,8 +34,8 @@ function ChannelButton({ value, selected }) {
   return (
     <div className={`flex items-center justify-between p-3 rounded-xl border text-xs font-semibold transition-all press ${
       selected
-        ? 'bg-[#FF6B1A]/10 border-[#FF6B1A]/20 text-[#FF6B1A] font-bold shadow-sm'
-        : 'border-[#E8E8E8] text-[#6F7178] hover:bg-[#F8ECD2]/50'
+        ? 'bg-[#FF6B1A]/10 border-[#FF6B1A]/30 text-[#FF6B1A] font-bold shadow-[0_0_10px_rgba(0,242,254,0.15)]'
+        : 'border-[#E8E8E8] text-[#6F7178] hover:bg-[#171C38]/5 hover:border-[#E8E8E8]'
     }`}>
       <span>{value}</span>
       {selected && <Check className="w-4 h-4 text-[#FF6B1A]" />}
@@ -66,7 +66,7 @@ export default function ValidatorForm({
           placeholder="Masukkan nama usaha (opsional)"
           value={form.businessName}
           onChange={(e) => setForm({ ...form, businessName: e.target.value })}
-          className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-sm font-medium placeholder:text-[#6F7178] mb-3 focus-ring"
+          className="w-full bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-3 text-sm font-semibold text-[#171C38] placeholder:text-[#6F7178] mb-3 transition-all focus-ring"
         />
         <ChipGroup options={CATEGORIES} value={form.category} onChange={(cat) => setForm({ ...form, category: cat })} />
       </div>
@@ -148,7 +148,7 @@ export default function ValidatorForm({
           placeholder="Jelaskan produk/layanan, masalah yang diselesaikan, dan keunikan bisnismu..."
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-4 text-sm font-medium placeholder:text-[#6F7178] resize-none focus-ring"
+          className="w-full bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-4 text-sm font-semibold text-[#171C38] placeholder:text-[#6F7178] resize-none transition-all focus-ring"
         />
       </div>
 
@@ -161,7 +161,7 @@ export default function ValidatorForm({
         <label className="block text-sm font-bold text-[#171C38] mb-2">Kanal Penjualan Utama</label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {CHANNELS.map((channel) => (
-            <button key={channel} type="button" onClick={() => handleCheckboxChange('channels', channel)}>
+            <button key={channel} type="button" className="w-full" onClick={() => handleCheckboxChange('channels', channel)}>
               <ChannelButton value={channel} selected={form.channels.includes(channel)} />
             </button>
           ))}
@@ -171,7 +171,7 @@ export default function ValidatorForm({
       <div>
         <div className="flex justify-between items-center mb-2">
           <label className="text-sm font-bold text-[#171C38]">Estimasi Modal Awal</label>
-          <span className="font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-3 py-1 rounded-full text-xs">
+          <span className="font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-3 py-1 rounded-full text-xs border border-[#FF6B1A]/20 shadow-[0_0_8px_rgba(0,242,254,0.15)]">
             {formatRupiah(form.capital)}
           </span>
         </div>
@@ -182,7 +182,7 @@ export default function ValidatorForm({
           step="1000000"
           value={form.capital}
           onChange={(e) => setForm({ ...form, capital: parseInt(e.target.value) })}
-          className="w-full h-2 bg-[#E8E8E8] rounded-lg appearance-none cursor-pointer accent-[#FF6B1A] focus-ring"
+          className="w-full h-2 bg-[#171C38]/10 rounded-lg appearance-none cursor-pointer accent-[#FF6B1A] focus-ring"
         />
         <div className="flex justify-between text-[10px] text-[#6F7178] font-bold mt-1">
           <span>Rp 1 Juta</span>
@@ -195,11 +195,11 @@ export default function ValidatorForm({
         type="button"
         onClick={onAnalyze}
         disabled={loading || !form.description}
-        className="w-full btn-primary text-sm py-4 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+        className="w-full cyber-btn text-sm py-4 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 rounded-xl"
       >
         {loading ? (
           <>
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[#050714] border-t-transparent rounded-full animate-spin" />
             <span>Menganalisa Ide...</span>
           </>
         ) : (
