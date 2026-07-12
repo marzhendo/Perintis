@@ -63,3 +63,69 @@ export function provinsiIdFromLatLng(lat, lng, provinsiList) {
   const prov = provinsiList.find(p => p.id === closest);
   return prov ? { ...prov, centerLat: centers[closest][0], centerLng: centers[closest][1] } : null;
 }
+
+export function cleanName(name) {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .replace(/^provinsi\s+/g, '')
+    .replace(/^daerah\s+khusus\s+ibukota\s+/g, 'dki ')
+    .replace(/^d.k.i.\s+/g, 'dki ')
+    .replace(/^daerah\s+istimewa\s+/g, 'di ')
+    .replace(/^d.i.\s+/g, 'di ')
+    .replace(/kepulauan/g, 'kep')
+    .replace(/kep\./g, 'kep')
+    .replace(/^kabupaten\s+/g, '')
+    .replace(/^kab\.\s+/g, '')
+    .replace(/^kota\s+/g, '')
+    .replace(/^kecamatan\s+/g, '')
+    .replace(/^kelurahan\s+/g, '')
+    .replace(/^desa\s+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function findBestMatch(list, searchName) {
+  if (!searchName || !list || !list.length) return null;
+  const searchClean = cleanName(searchName);
+  const searchLower = searchName.toLowerCase();
+  
+  let bestMatch = null;
+  let highestScore = -1;
+
+  for (const item of list) {
+    const itemClean = cleanName(item.nama);
+    const itemLower = item.nama.toLowerCase();
+
+    if (itemClean === searchClean) {
+      let score = 10;
+      // Tingkatkan skor jika tipenya sama (kota vs kabupaten)
+      const itemIsKota = itemLower.includes('kota');
+      const searchIsKota = searchLower.includes('kota') || searchLower.includes('city');
+      const itemIsKab = itemLower.includes('kabupaten') || itemLower.includes('kab.');
+      const searchIsKab = searchLower.includes('kabupaten') || searchLower.includes('kab.') || searchLower.includes('county');
+
+      if (itemIsKota && searchIsKota) score += 5;
+      if (itemIsKab && searchIsKab) score += 5;
+      
+      if (score > highestScore) {
+        highestScore = score;
+        bestMatch = item;
+      }
+    }
+  }
+  return bestMatch;
+}
+
+export async function getAddressFromLatLng(lat, lng) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=id`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.address || null;
+  } catch (error) {
+    console.error('Gagal melakukan reverse geocoding via Nominatim:', error);
+    return null;
+  }
+}
+

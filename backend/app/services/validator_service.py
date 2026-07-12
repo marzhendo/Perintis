@@ -60,8 +60,9 @@ _GEMINI_MODEL = "gemini-3.1-flash-lite"
 _SYSTEM_INSTRUCTION = (
     "Kamu adalah konsultan bisnis berpengalaman yang mengkhususkan diri dalam "
     "evaluasi kelayakan usaha mikro, kecil, dan menengah (UMKM) di Indonesia. "
-    "Tugasmu adalah menilai ide bisnis secara objektif berdasarkan lima dimensi: "
-    "potensi pasar, lanskap kompetitor, relevansi tren, eksposur risiko, dan "
+    "Tugasmu adalah menilai ide bisnis secara objektif dengan mempertimbangkan lokasi usaha yang "
+    "ditentukan oleh pengguna (misalnya potensi pasar lokal, kompetisi daerah, ketersediaan pasokan lokal, daya beli wilayah tersebut). "
+    "Nilai kelayakan berdasarkan lima dimensi: potensi pasar, lanskap kompetitor, relevansi tren, eksposur risiko, dan "
     "potensi pertumbuhan jangka pendek. "
     "Berikan penilaian yang realistis dan actionable, bukan sekadar pujian. "
     "Skor kelayakan (skor_bintang) menggunakan skala 1.0-5.0 dengan presisi 0.1."
@@ -72,13 +73,14 @@ def _build_prompt(req: ValidateRequest) -> str:
     return (
         f"Nama Usaha: {req.nama_usaha}\n"
         f"Deskripsi Ide: {req.deskripsi_ide}\n"
-        f"Target Pasar: {req.target_pasar}\n\n"
+        f"Target Pasar: {req.target_pasar}\n"
+        f"Lokasi Usaha: {req.lokasi}\n\n"
         "Evaluasi ide bisnis di atas berdasarkan:\n"
-        "1. Kejelasan dan ukuran segmen target pasar\n"
-        "2. Kelayakan model bisnis dan struktur biaya\n"
-        "3. Relevansi dengan tren konsumen saat ini\n"
-        "4. Risiko utama yang perlu dimitigasi\n"
-        "5. Potensi pertumbuhan dan skalabilitas"
+        "1. Kejelasan dan ukuran segmen target pasar di lokasi tersebut\n"
+        "2. Kelayakan model bisnis, ketersediaan bahan baku/mitra lokal, dan struktur biaya setempat\n"
+        "3. Relevansi dengan tren konsumen lokal saat ini\n"
+        "4. Risiko utama (seperti kompetisi lokal, regulasi daerah, demografi) yang perlu dimitigasi\n"
+        "5. Potensi pertumbuhan dan skalabilitas di wilayah tersebut"
     )
 
 
@@ -283,11 +285,11 @@ def _validate_with_keyword_matching(req: ValidateRequest) -> dict:
         "skor_bintang": score,
         "verdict": verdict,
         "analisis": {
-            "market": _get_market_analysis(market_count, desc),
-            "competitor": _get_competitor_analysis(bisnis_count, desc),
-            "trend": _get_trend_analysis(trend_count, desc),
-            "risiko": _get_risk_analysis(desc),
-            "potensi": _get_potential_analysis(score, desc),
+            "market": _get_market_analysis(market_count, desc, req.lokasi),
+            "competitor": _get_competitor_analysis(bisnis_count, desc, req.lokasi),
+            "trend": _get_trend_analysis(trend_count, desc, req.lokasi),
+            "risiko": _get_risk_analysis(desc, req.lokasi),
+            "potensi": _get_potential_analysis(score, desc, req.lokasi),
         },
     }
 
@@ -323,81 +325,86 @@ def _assert_response_shape(result: dict) -> None:
 # Keyword-matching helpers — fallback logic, JANGAN dihapus.
 # ---------------------------------------------------------------------------
 
-def _get_market_analysis(market_count: int, desc: str) -> str:
+def _get_market_analysis(market_count: int, desc: str, lokasi: str) -> str:
+    loc_suffix = f" di wilayah {lokasi}" if lokasi and lokasi != "Seluruh Indonesia" else ""
     if market_count >= 3:
         return (
-            "Tinggi. Deskripsi menunjukkan pemahaman yang baik tentang "
-            "target pasar dan kebutuhan konsumen. Potensi adopsi produk tinggi."
+            f"Tinggi. Deskripsi menunjukkan pemahaman yang baik tentang "
+            f"target pasar dan kebutuhan konsumen{loc_suffix}. Potensi adopsi produk tinggi."
         )
     elif market_count >= 1:
         return (
-            "Sedang. Terdapat identifikasi pasar namun belum spesifik. "
-            "Disarankan melakukan riset pasar lebih mendalam."
+            f"Sedang. Terdapat identifikasi pasar{loc_suffix} namun belum spesifik. "
+            f"Disarankan melakukan riset pasar lebih mendalam."
         )
     return (
-        "Perlu Dikaji. Belum terlihat analisis pasar yang jelas. "
-        "Pertimbangkan untuk mendefinisikan target konsumen secara lebih spesifik."
+        f"Perlu Dikaji. Belum terlihat analisis pasar yang jelas{loc_suffix}. "
+        f"Pertimbangkan untuk mendefinisikan target konsumen secara lebih spesifik."
     )
 
 
-def _get_competitor_analysis(bisnis_count: int, desc: str) -> str:
+def _get_competitor_analysis(bisnis_count: int, desc: str, lokasi: str) -> str:
+    loc_suffix = f" di {lokasi}" if lokasi and lokasi != "Seluruh Indonesia" else ""
     if bisnis_count >= 3:
         return (
-            "Rendah - Sedang. Ide memiliki kejelasan model bisnis yang cukup baik. "
-            "Analisis kompetitor akan membantu memperkuat posisi pasar."
+            f"Rendah - Sedang. Ide memiliki kejelasan model bisnis yang cukup baik. "
+            f"Analisis kompetitor{loc_suffix} akan membantu memperkuat posisi pasar."
         )
     elif bisnis_count >= 1:
         return (
-            "Sedang. Beberapa aspek bisnis telah dipertimbangkan. "
-            "Disarankan untuk mempelajari kompetitor langsung di lapangan."
+            f"Sedang. Beberapa aspek bisnis telah dipertimbangkan. "
+            f"Disarankan untuk mempelajari kompetitor langsung{loc_suffix}."
         )
     return (
-        "Perlu Dipertimbangkan. Belum ada analisis kompetitor atau model bisnis "
-        "yang jelas. Riset kompetitor sangat disarankan."
+        f"Perlu Dipertimbangkan. Belum ada analisis kompetitor atau model bisnis "
+        f"yang jelas. Riset kompetitor{loc_suffix} sangat disarankan."
     )
 
 
-def _get_trend_analysis(trend_count: int, desc: str) -> str:
+def _get_trend_analysis(trend_count: int, desc: str, lokasi: str) -> str:
+    loc_suffix = f" di {lokasi}" if lokasi and lokasi != "Seluruh Indonesia" else ""
     if trend_count >= 2:
         return (
-            "Positif. Ide selaras dengan tren pasar terkini, terutama "
-            "dalam aspek digital dan inovasi."
+            f"Positif. Ide selaras dengan tren pasar terkini{loc_suffix}, terutama "
+            f"dalam aspek digital dan inovasi."
         )
     elif trend_count >= 1:
         return (
-            "Netral. Terdapat sedikit elemen tren, namun bisa diperkuat dengan "
-            "pendekatan yang lebih modern."
+            f"Netral. Terdapat sedikit elemen tren{loc_suffix}, namun bisa diperkuat dengan "
+            f"pendekatan yang lebih modern."
         )
     return (
-        "Tradisional. Ide cenderung konvensional. "
-        "Pertimbangkan integrasi teknologi atau kanal digital untuk daya saing."
+        f"Tradisional. Ide cenderung konvensional. "
+        f"Pertimbangkan integrasi teknologi atau kanal digital{loc_suffix} untuk daya saing."
     )
 
 
-def _get_risk_analysis(desc: str) -> str:
+def _get_risk_analysis(desc: str, lokasi: str) -> str:
+    loc_suffix = f" di {lokasi}" if lokasi and lokasi != "Seluruh Indonesia" else ""
     if len(desc) > 100:
         return (
-            "Fluktuasi harga bahan baku dan perubahan perilaku konsumen "
-            "merupakan risiko utama. Disarankan memiliki cadangan modal."
+            f"Fluktuasi harga bahan baku setempat dan perubahan perilaku konsumen "
+            f"merupakan risiko utama{loc_suffix}. Disarankan memiliki cadangan modal."
         )
     return (
-        "Ketidakpastian pasar dan keterbatasan modal awal menjadi risiko "
-        "utama. Disarankan memulai dalam skala kecil terlebih dahulu."
+        f"Ketidakpastian pasar lokal dan keterbatasan modal awal menjadi risiko "
+        f"utama{loc_suffix}. Disarankan memulai dalam skala kecil terlebih dahulu."
     )
 
 
-def _get_potential_analysis(score: float, desc: str) -> str:
+def _get_potential_analysis(score: float, desc: str, lokasi: str) -> str:
+    loc_suffix = f" di {lokasi}" if lokasi and lokasi != "Seluruh Indonesia" else ""
     if score >= 4.0:
         return (
-            "Sangat Baik. Skala mikro yang menjanjikan dengan peluang "
-            "ekspansi waralaba mikro tinggi setelah 6 bulan stabil."
+            f"Sangat Baik. Skala mikro yang menjanjikan dengan peluang "
+            f"ekspansi waralaba mikro tinggi{loc_suffix} setelah 6 bulan stabil."
         )
     elif score >= 3.0:
         return (
-            "Cukup Baik. Potensi berkembang ada dengan catatan perbaikan "
-            "pada strategi pemasaran dan efisiensi operasional."
+            f"Cukup Baik. Potensi berkembang{loc_suffix} ada dengan catatan perbaikan "
+            f"pada strategi pemasaran dan efisiensi operasional."
         )
     return (
-        "Masih Perlu Pengembangan. Disarankan mengikuti program inkubasi "
-        "bisnis atau pendampingan UMKM sebelum memulai."
+        f"Masih Perlu Pengembangan. Disarankan mengikuti program inkubasi "
+        f"bisnis atau pendampingan UMKM{loc_suffix} sebelum memulai."
     )

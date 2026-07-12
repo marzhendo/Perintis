@@ -1,26 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Download, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Download, ArrowUp, ArrowDown, MapPin, ChevronDown, ExternalLink } from 'lucide-react';
 import { fetchCommodities, getFallbackCommodities } from '../services/commodityApi';
 import { useToast } from '../components/Toast';
 import { CardSkeleton, Shimmer } from '../components/LoadingSkeleton';
+
+// 34 provinsi sesuai data Bank Indonesia PIHPS
+const BI_PROVINCES = [
+  'Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Kepulauan Riau',
+  'Jambi', 'Bengkulu', 'Sumatera Selatan', 'Kepulauan Bangka Belitung',
+  'Lampung', 'Banten', 'Jawa Barat', 'DKI Jakarta', 'Jawa Tengah',
+  'DI Yogyakarta', 'Jawa Timur', 'Bali', 'Nusa Tenggara Barat',
+  'Nusa Tenggara Timur', 'Kalimantan Barat', 'Kalimantan Selatan',
+  'Kalimantan Tengah', 'Kalimantan Timur', 'Kalimantan Utara', 'Gorontalo',
+  'Sulawesi Selatan', 'Sulawesi Tenggara', 'Sulawesi Tengah', 'Sulawesi Utara',
+  'Sulawesi Barat', 'Maluku', 'Maluku Utara', 'Papua', 'Papua Barat',
+];
 
 export default function HargaPangan({ region }) {
   const [commodities, setCommodities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedProvince, setSelectedProvince] = useState('');
+  const [isProvinceOpen, setIsProvinceOpen] = useState(false);
   const toast = useToast();
+
+  // Use selectedProvince if set, otherwise fall back to region from props
+  const activeLocation = selectedProvince || region || '';
 
   useEffect(() => {
     setLoading(true);
-    fetchCommodities(region)
+    fetchCommodities(activeLocation || null)
       .then(data => { setCommodities(data); setLoading(false); })
       .catch(() => {
-        setCommodities(getFallbackCommodities(region));
+        setCommodities(getFallbackCommodities(activeLocation || null));
         setLoading(false);
         toast.info('Menampilkan data offline — server tidak merespon');
       });
-  }, [region]);
-  
+  }, [activeLocation]);
+
   const filtered = commodities.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -47,28 +64,93 @@ export default function HargaPangan({ region }) {
       .join(' ');
   };
 
+  const dataDate = commodities[0]?.date || '';
+
   return (
     <div className="space-y-8 animate-fade-in text-left">
-      {/* Header & Search */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-[#171C38] tracking-tight">Dashboard Harga Pangan</h2>
-          <p className="text-sm text-[#6F7178] mt-1">
-            Pantau pergerakan harga komoditas pangan terkini untuk estimasi biaya usaha.
-            {region && <span className="inline-flex items-center gap-1 ml-2 px-2.5 py-0.5 rounded-full bg-[#FF6B1A]/10 text-[#FF6B1A] font-bold text-[10px] border border-[#FF6B1A]/20">{region}</span>}
-          </p>
+      {/* Header & Controls */}
+      <header className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-extrabold text-[#171C38] tracking-tight">Dashboard Harga Pangan</h2>
+            <p className="text-sm text-[#6F7178] mt-1">
+              Pantau pergerakan harga komoditas pangan terkini untuk estimasi biaya usaha.
+            </p>
+          </div>
+          <div className="relative w-full md:w-96">
+            <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#6F7178]" />
+            <input
+              type="text"
+              placeholder="Cari komoditas..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl transition-all text-sm font-medium placeholder:text-[#6F7178] press-sm focus-ring"
+            />
+          </div>
         </div>
-        <div className="relative w-full md:w-96">
-          <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#6F7178]" />
-          <input 
-            type="text"
-            placeholder="Cari komoditas..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl transition-all text-sm font-medium placeholder:text-[#6F7178] press-sm focus-ring"
-          />
+
+        {/* Province Selector + Source Info Row */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
+          {/* Province Dropdown */}
+          <div className="relative">
+            <button
+              id="province-selector-btn"
+              onClick={() => setIsProvinceOpen(prev => !prev)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#E8E8E8] hover:border-[#FF6B1A]/40 rounded-xl text-sm font-semibold text-[#171C38] transition-all shadow-sm hover:shadow-md press-sm"
+            >
+              <MapPin className="w-4 h-4 text-[#FF6B1A]" />
+              <span>{selectedProvince || 'Semua Provinsi'}</span>
+              <ChevronDown className={`w-4 h-4 text-[#6F7178] transition-transform duration-200 ${isProvinceOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isProvinceOpen && (
+              <div className="absolute z-50 top-full left-0 mt-2 w-64 bg-white border border-[#E8E8E8] rounded-xl shadow-lg overflow-hidden animate-fade-in">
+                <div className="max-h-72 overflow-y-auto">
+                  {/* National option */}
+                  <button
+                    onClick={() => { setSelectedProvince(''); setIsProvinceOpen(false); }}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${!selectedProvince ? 'bg-[#FF6B1A]/10 text-[#FF6B1A] font-bold' : 'text-[#171C38] hover:bg-[#F8ECD2] font-medium'}`}
+                  >
+                    🗺️ Semua Provinsi (Rata-rata Nasional)
+                  </button>
+                  <div className="border-t border-[#E8E8E8]" />
+                  {BI_PROVINCES.map(prov => (
+                    <button
+                      key={prov}
+                      onClick={() => { setSelectedProvince(prov); setIsProvinceOpen(false); }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${selectedProvince === prov ? 'bg-[#FF6B1A]/10 text-[#FF6B1A] font-bold' : 'text-[#171C38] hover:bg-[#F8ECD2] font-medium'}`}
+                    >
+                      {prov}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Source Attribution */}
+          <div className="flex items-center gap-2 text-xs text-[#6F7178]">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>
+              Sumber: <a
+                href="https://www.bi.go.id/hargapangan"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#FF6B1A] hover:underline font-semibold inline-flex items-center gap-0.5"
+              >
+                Bank Indonesia PIHPS
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              {dataDate && <span className="ml-1">· {dataDate}</span>}
+            </span>
+          </div>
         </div>
       </header>
+
+      {/* Click-outside to close dropdown */}
+      {isProvinceOpen && (
+        <div className="fixed inset-0 z-40" onClick={() => setIsProvinceOpen(false)} />
+      )}
 
       {/* Decorative Blob */}
       <div className="absolute top-20 right-0 w-96 h-96 bg-[#FF6B1A]/5 rounded-full blur-3xl -z-10 animate-float" />
@@ -89,11 +171,11 @@ export default function HargaPangan({ region }) {
                   <span className="text-[10px] text-[#6F7178] uppercase font-semibold tracking-wider">{item.unit}</span>
                 </div>
               </div>
-              
+
               {item.isUp !== null && (
                 <div className={`px-2 py-1 rounded-full flex items-center gap-0.5 text-[10px] font-bold ${
-                  item.isUp 
-                    ? 'bg-rose-500/10 text-rose-600 border border-rose-500/15' 
+                  item.isUp
+                    ? 'bg-rose-500/10 text-rose-600 border border-rose-500/15'
                     : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/15'
                 }`}>
                   {item.isUp ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
@@ -101,11 +183,11 @@ export default function HargaPangan({ region }) {
                 </div>
               )}
             </div>
-            
+
             <div>
               <div className="text-xl font-extrabold text-[#171C38]">{formatRupiah(item.price)}</div>
             </div>
-            
+
             <div className="h-10 w-full mt-1 opacity-80">
               <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 30">
                 <polyline
@@ -134,13 +216,20 @@ export default function HargaPangan({ region }) {
         ) : (
         <>
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-bold text-[#171C38]">Riwayat Harga Terkini</h3>
+          <div>
+            <h3 className="text-lg font-bold text-[#171C38]">Riwayat Harga Terkini</h3>
+            {selectedProvince && (
+              <p className="text-xs text-[#6F7178] mt-0.5">
+                Menampilkan harga nasional · Data provinsi per komoditas tersedia setelah pembaruan pagi
+              </p>
+            )}
+          </div>
           <button className="text-[#FF6B1A] font-semibold text-xs hover:bg-[#FF6B1A]/10 border border-[#FF6B1A]/20 px-4 py-2 rounded-xl transition-all flex items-center gap-2">
             <Download className="w-4 h-4" />
             <span>Export CSV</span>
           </button>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -159,10 +248,10 @@ export default function HargaPangan({ region }) {
                   <td className="py-4 px-4 text-[#6F7178]">{item.date}</td>
                   <td className="py-4 px-4 font-medium">{formatRupiah(item.price)}</td>
                   <td className={`py-4 px-4 font-semibold ${
-                    item.changeRp > 0 
-                      ? 'text-rose-600' 
-                      : item.changeRp < 0 
-                        ? 'text-emerald-600' 
+                    item.changeRp > 0
+                      ? 'text-rose-600'
+                      : item.changeRp < 0
+                        ? 'text-emerald-600'
                         : 'text-[#6F7178]'
                   }`}>
                     {item.changeRp > 0 ? `+ ${formatRupiah(item.changeRp)}` : item.changeRp < 0 ? `- ${formatRupiah(Math.abs(item.changeRp))}` : 'Rp 0'}

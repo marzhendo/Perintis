@@ -1,92 +1,444 @@
 {
+  "last_updated": "12 Jul 2026",
+  "source": "Bank Indonesia — Pusat Informasi Harga Pangan Strategis Nasional",
+  "source_url": "https://www.bi.go.id/hargapangan",
   "commodities": [
     {
       "id": 1,
-      "name": "Beras Premium",
+      "name": "Beras Kualitas Bawah I",
       "unit": "per Kg",
-      "price": 15400,
-      "change": 2.4,
-      "changeRp": 300,
-      "isUp": true,
-      "date": "24 Okt 2024",
-      "history": [14800, 14950, 15100, 15150, 15250, 15400]
-    },
-    {
-      "id": 2,
-      "name": "Cabai Rawit",
-      "unit": "per Kg",
-      "price": 45000,
-      "change": -5.1,
-      "changeRp": -2500,
-      "isUp": false,
-      "date": "24 Okt 2024",
-      "history": [49500, 48000, 47800, 46500, 45800, 45000]
-    },
-    {
-      "id": 3,
-      "name": "Daging Ayam",
-      "unit": "per Ekor",
-      "price": 38500,
-      "change": 1.2,
-      "changeRp": 500,
-      "isUp": true,
-      "date": "23 Okt 2024",
-      "history": [37200, 37500, 38100, 38000, 38200, 38500]
-    },
-    {
-      "id": 4,
-      "name": "Bawang Merah",
-      "unit": "per Kg",
-      "price": 28000,
-      "change": -0.8,
-      "changeRp": -200,
-      "isUp": false,
-      "date": "23 Okt 2024",
-      "history": [29200, 29000, 28800, 28500, 28200, 28000]
-    },
-    {
-      "id": 5,
-      "name": "Minyak Goreng",
-      "unit": "per Liter",
-      "price": 18200,
+      "price": 14700,
       "change": 0.0,
       "changeRp": 0,
       "isUp": null,
-      "date": "22 Okt 2024",
-      "history": [18200, 18200, 18200, 18200, 18200, 18200]
+      "date": "10 Jul 2026",
+      "history": [
+        14700,
+        14700,
+        14700,
+        14700,
+        14700,
+        14700,
+        14700
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Beras Kualitas Bawah II",
+      "unit": "per Kg",
+      "price": 14550,
+      "change": 0.34,
+      "changeRp": 50,
+      "isUp": true,
+      "date": "10 Jul 2026",
+      "history": [
+        14550,
+        14550,
+        14550,
+        14550,
+        14550,
+        14550,
+        14550
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Beras Kualitas Medium I",
+      "unit": "per Kg",
+      "price": 16350,
+      "change": 0.0,
+      "changeRp": 0,
+      "isUp": null,
+      "date": "10 Jul 2026",
+      "history": [
+        16350,
+        16350,
+        16350,
+        16350,
+        16350,
+        16350,
+        16350
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Beras Kualitas Medium II",
+      "unit": "per Kg",
+      "price": 16150,
+      "change": 0.0,
+      "changeRp": 0,
+      "isUp": null,
+      "date": "10 Jul 2026",
+      "history": [
+        16150,
+        16150,
+        16150,
+        16150,
+        16150,
+        16150,
+        16150
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Beras Kualitas Super I",
+      "unit": "per Kg",
+      "price": 17650,
+      "change": 0.0,
+      "changeRp": 0,
+      "isUp": null,
+      "date": "10 Jul 2026",
+      "history": [
+        17650,
+        17650,
+        17650,
+        17650,
+        17650,
+        17650,
+        17650
+      ]
     },
     {
       "id": 6,
-      "name": "Gula Pasir",
+      "name": "Beras Kualitas Super II",
       "unit": "per Kg",
-      "price": 16500,
-      "change": 0.6,
-      "changeRp": 100,
-      "isUp": true,
-      "date": "22 Okt 2024",
-      "history": [16100, 16200, 16300, 16400, 16400, 16500]
+      "price": 17150,
+      "change": 0.0,
+      "changeRp": 0,
+      "isUp": null,
+      "date": "10 Jul 2026",
+      "history": [
+        17150,
+        17150,
+        17150,
+        17150,
+        17150,
+        17150,
+        17150
+      ]
     },
     {
       "id": 7,
-      "name": "Telur Ayam Ras",
+      "name": "Bawang Merah Ukuran Sedang",
       "unit": "per Kg",
-      "price": 27500,
-      "change": -1.8,
-      "changeRp": -500,
+      "price": 45650,
+      "change": -4.5,
+      "changeRp": -2150,
       "isUp": false,
-      "date": "21 Okt 2024",
-      "history": [28900, 28700, 28400, 28000, 27800, 27500]
+      "date": "10 Jul 2026",
+      "history": [
+        46200,
+        45900,
+        45650,
+        45650,
+        45650,
+        45650,
+        45650
+      ]
     },
     {
       "id": 8,
-      "name": "Bawang Putih",
+      "name": "Bawang Putih Ukuran Sedang",
       "unit": "per Kg",
-      "price": 32000,
-      "change": 1.5,
-      "changeRp": 450,
+      "price": 44550,
+      "change": 1.14,
+      "changeRp": 500,
       "isUp": true,
-      "date": "21 Okt 2024",
-      "history": [31000, 31200, 31400, 31500, 31800, 32000]
+      "date": "10 Jul 2026",
+      "history": [
+        44550,
+        44550,
+        44550,
+        44550,
+        44550,
+        44550,
+        44550
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Cabai Merah Besar",
+      "unit": "per Kg",
+      "price": 48850,
+      "change": -3.93,
+      "changeRp": -2000,
+      "isUp": false,
+      "date": "10 Jul 2026",
+      "history": [
+        48850,
+        48850,
+        48850,
+        48850,
+        48850,
+        48850,
+        48850
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Cabai Merah Keriting",
+      "unit": "per Kg",
+      "price": 48600,
+      "change": -4.24,
+      "changeRp": -2150,
+      "isUp": false,
+      "date": "10 Jul 2026",
+      "history": [
+        48600,
+        48600,
+        48600,
+        48600,
+        48600,
+        48600,
+        48600
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Cabai Rawit Hijau",
+      "unit": "per Kg",
+      "price": 50350,
+      "change": 1.31,
+      "changeRp": 650,
+      "isUp": true,
+      "date": "10 Jul 2026",
+      "history": [
+        50350,
+        50350,
+        50350,
+        50350,
+        50350,
+        50350,
+        50350
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Cabai Rawit Merah",
+      "unit": "per Kg",
+      "price": 59850,
+      "change": -3.55,
+      "changeRp": -2200,
+      "isUp": false,
+      "date": "10 Jul 2026",
+      "history": [
+        59850,
+        59850,
+        59850,
+        59850,
+        59850,
+        59850,
+        59850
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Daging Ayam Ras Segar",
+      "unit": "per Kg",
+      "price": 37000,
+      "change": 1.37,
+      "changeRp": 500,
+      "isUp": true,
+      "date": "10 Jul 2026",
+      "history": [
+        37000,
+        37000,
+        37000,
+        37000,
+        37000,
+        37000,
+        37000
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Daging Sapi Kualitas 1",
+      "unit": "per Kg",
+      "price": 150550,
+      "change": 0.23,
+      "changeRp": 350,
+      "isUp": true,
+      "date": "10 Jul 2026",
+      "history": [
+        150550,
+        150550,
+        150550,
+        150550,
+        150550,
+        150550,
+        150550
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Daging Sapi Kualitas 2",
+      "unit": "per Kg",
+      "price": 141950,
+      "change": 0.35,
+      "changeRp": 500,
+      "isUp": true,
+      "date": "10 Jul 2026",
+      "history": [
+        141950,
+        141950,
+        141950,
+        141950,
+        141950,
+        141950,
+        141950
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Gula Pasir Lokal",
+      "unit": "per Kg",
+      "price": 19100,
+      "change": 0.26,
+      "changeRp": 50,
+      "isUp": true,
+      "date": "10 Jul 2026",
+      "history": [
+        19100,
+        19100,
+        19100,
+        19100,
+        19100,
+        19100,
+        19100
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Gula Pasir Kualitas Premium",
+      "unit": "per Kg",
+      "price": 20300,
+      "change": 0.0,
+      "changeRp": 0,
+      "isUp": null,
+      "date": "10 Jul 2026",
+      "history": [
+        20300,
+        20300,
+        20300,
+        20300,
+        20300,
+        20300,
+        20300
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Minyak Goreng Curah",
+      "unit": "per Liter",
+      "price": 20550,
+      "change": 0.0,
+      "changeRp": 0,
+      "isUp": null,
+      "date": "10 Jul 2026",
+      "history": [
+        20550,
+        20550,
+        20550,
+        20550,
+        20550,
+        20550,
+        20550
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Minyak Goreng Kemasan Bermerk 1",
+      "unit": "per Liter",
+      "price": 24250,
+      "change": 0.0,
+      "changeRp": 0,
+      "isUp": null,
+      "date": "10 Jul 2026",
+      "history": [
+        24250,
+        24250,
+        24250,
+        24250,
+        24250,
+        24250,
+        24250
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Minyak Goreng Kemasan Bermerk 2",
+      "unit": "per Liter",
+      "price": 23400,
+      "change": 0.0,
+      "changeRp": 0,
+      "isUp": null,
+      "date": "10 Jul 2026",
+      "history": [
+        23400,
+        23400,
+        23400,
+        23400,
+        23400,
+        23400,
+        23400
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Telur Ayam Ras Segar",
+      "unit": "per Kg",
+      "price": 28950,
+      "change": -0.86,
+      "changeRp": -250,
+      "isUp": false,
+      "date": "10 Jul 2026",
+      "history": [
+        28950,
+        28950,
+        28950,
+        28950,
+        28950,
+        28950,
+        28950
+      ]
     }
-  ]
+  ],
+  "province_beras_medium_i": {
+    "Aceh": 15500,
+    "Sumatera Utara": 15250,
+    "Sumatera Barat": 17800,
+    "Riau": 16450,
+    "Kepulauan Riau": 15550,
+    "Jambi": 15550,
+    "Bengkulu": 15700,
+    "Sumatera Selatan": 15950,
+    "Kepulauan Bangka Belitung": 15400,
+    "Lampung": 15350,
+    "Banten": 16050,
+    "Jawa Barat": 15150,
+    "DKI Jakarta": 16850,
+    "Jawa Tengah": 15450,
+    "DI Yogyakarta": 14400,
+    "Jawa Timur": 15000,
+    "Bali": 15800,
+    "Nusa Tenggara Barat": 13800,
+    "Nusa Tenggara Timur": 15400,
+    "Kalimantan Barat": 16850,
+    "Kalimantan Selatan": 19300,
+    "Kalimantan Tengah": 19550,
+    "Kalimantan Timur": 16500,
+    "Kalimantan Utara": 17150,
+    "Gorontalo": 16450,
+    "Sulawesi Selatan": 14400,
+    "Sulawesi Tenggara": 15800,
+    "Sulawesi Tengah": 16100,
+    "Sulawesi Utara": 15850,
+    "Sulawesi Barat": 14600,
+    "Maluku": 16950,
+    "Maluku Utara": 17650,
+    "Papua": 19100,
+    "Papua Barat": 17150
+  },
+  "province_data_source": "Bank Indonesia PIHPS — Beras Kualitas Medium I (peta awal)",
+  "province_data_updated": "12 Jul 2026"
 }

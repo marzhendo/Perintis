@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { Search, Crosshair, Navigation, ChevronLeft } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { getProvinsi, getKabupaten, getKecamatan, getKelurahan, provinsiIdFromLatLng } from '../services/areaService';
+import { getProvinsi, getKabupaten, getKecamatan, getKelurahan, provinsiIdFromLatLng, getAddressFromLatLng, findBestMatch } from '../services/areaService';
 import { getPricesForProvince } from '../data/indonesiaData';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -24,6 +24,16 @@ const umkmIcon = L.divIcon({
   html: '<div style="width:14px;height:14px;background:#171C38;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>',
   iconSize: [14, 14], iconAnchor: [7, 7],
 });
+
+function MapController({ center, zoom }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, zoom);
+    }
+  }, [center, zoom, map]);
+  return null;
+}
 
 const UMKM_LOCATIONS = [
   { name: 'Warung Seger Abah', city: 'Jakarta', type: 'Kuliner', lat: -6.2088, lng: 106.8456, products: 'Nasi Uduk, Lauk' },
@@ -46,6 +56,7 @@ const UMKM_LOCATIONS = [
 export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState('map');
+  const [locationMode, setLocationMode] = useState('explore'); // 'explore' or 'manual'
   const [provinsiList, setProvinsiList] = useState([]);
   const [kabupatenList, setKabupatenList] = useState([]);
   const [kecamatanList, setKecamatanList] = useState([]);
@@ -58,6 +69,8 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [subLoading, setSubLoading] = useState(false);
   const [prices, setPrices] = useState(getPricesForProvince('default'));
+  const [mapCenter, setMapCenter] = useState([-2.5, 117]);
+  const [mapZoom, setMapZoom] = useState(5);
 
   useEffect(() => {
     getProvinsi().then(list => {
@@ -66,35 +79,108 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
     });
   }, []);
 
-  const findAndSelectProvinsi = useCallback((lat, lng) => {
-    const prov = provinsiIdFromLatLng(lat, lng, provinsiList);
-    if (prov) {
-      setSelectedProvinsi(prov);
-      setSelectedRegion(prov.nama);
-      setPrices(getPricesForProvince(prov.id));
-      setSubLoading(true);
-      getKabupaten(prov.id).then(kabs => {
-        setKabupatenList(kabs);
-        setSubLoading(false);
-      });
+  const geocodeAddress = async (addressQuery) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addressQuery)}&format=json&limit=1`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.length > 0) {
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+    } catch (error) {
+      console.error('Error geocoding address:', error);
     }
-  }, [provinsiList, setSelectedRegion]);
+    return null;
+  };
 
-  const handleLocate = useCallback(() => {
-    if (!navigator.geolocation) { setGeoError('Geolokasi tidak didukung'); return; }
+  const handleLocate = useCallback(async () => {
+    if (!navigator.geolocation) {
+      setGeoError('Geolokasi tidak didukung');
+      return;
+    }
+    setSubLoading(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
         setUserLocation({ lat, lng });
-        findAndSelectProvinsi(lat, lng);
-        setGeoError(null);
-      },
-      () => setGeoError('Aktifkan izin lokasi'),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }, [findAndSelectProvinsi]);
+        setMapCenter([lat, lng]);
+        setMapZoom(12);
+        
+        try {
+          const address = await getAddressFromLatLng(lat, lng);
+          if (address && provinsiList.length > 0) {
+            const provName = address.state || address.province || address.region;
+            const matchedProv = findBestMatch(provinsiList, provName);
+            if (matchedProv) {
+              setSelectedProvinsi(matchedProv);
+              setPrices(getPricesForProvince(matchedProv.id));
 
-  useEffect(() => { if (provinsiList.length) handleLocate(); }, [provinsiList.length]);
+              let regionStr = matchedProv.nama;
+
+              const kabs = await getKabupaten(matchedProv.id);
+              setKabupatenList(kabs);
+              const kabName = address.city || address.county || address.municipality || address.regency;
+              const matchedKab = findBestMatch(kabs, kabName);
+              if (matchedKab) {
+                setSelectedKabupaten(matchedKab);
+                regionStr += `, ${matchedKab.nama}`;
+
+                const kecs = await getKecamatan(matchedKab.id);
+                setKecamatanList(kecs);
+                const kecName = address.suburb || address.district || address.subdistrict || address.town || address.city_district;
+                const matchedKec = findBestMatch(kecs, kecName);
+                if (matchedKec) {
+                  setSelectedKecamatan(matchedKec);
+                  regionStr += `, ${matchedKec.nama}`;
+
+                  const kels = await getKelurahan(matchedKec.id);
+                  setKelurahanList(kels);
+                } else {
+                  setSelectedKecamatan(null);
+                  setKelurahanList([]);
+                }
+              } else {
+                setSelectedKabupaten(null);
+                setSelectedKecamatan(null);
+                setKecamatanList([]);
+                setKelurahanList([]);
+              }
+              
+              setSelectedRegion(regionStr);
+              setGeoError(null);
+              setSubLoading(false);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error('Pencocokan lokasi gagal, menjalankan fallback:', err);
+        }
+
+        // Fallback jika reverse geocoding tidak berhasil
+        const prov = provinsiIdFromLatLng(lat, lng, provinsiList);
+        if (prov) {
+          setSelectedProvinsi(prov);
+          setSelectedRegion(prov.nama);
+          setPrices(getPricesForProvince(prov.id));
+          setSelectedKabupaten(null);
+          setSelectedKecamatan(null);
+          setKecamatanList([]);
+          setKelurahanList([]);
+          const kabs = await getKabupaten(prov.id);
+          setKabupatenList(kabs);
+        }
+        setGeoError(null);
+        setSubLoading(false);
+      },
+      () => {
+        setGeoError('Aktifkan izin lokasi');
+        setSubLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }, [provinsiList, setSelectedRegion]);
+
+  useEffect(() => { if (provinsiList.length) { handleLocate(); } }, [provinsiList.length]);
 
   const handleProvinsiClick = (prov) => {
     setSelectedProvinsi(prov);
@@ -105,35 +191,202 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
     setKelurahanList([]);
     setSelectedRegion(prov.nama);
     setPrices(getPricesForProvince(prov.id));
+
+    const centers = {
+      1: [5.5, 95.3], 2: [3.6, 98.7], 3: [-0.5, 101.5], 4: [0.5, 101.4],
+      5: [-1.6, 103.6], 6: [-0.5, 104.5], 7: [-3.0, 104.8], 8: [-3.8, 102.3],
+      9: [-5.4, 105.3], 10: [-2.7, 107.6], 11: [1.0, 104.5], 12: [-6.2, 106.8],
+      13: [-6.9, 107.6], 14: [-6.4, 106.1], 15: [-7.2, 110.1], 16: [-7.8, 110.4],
+      17: [-7.5, 112.2], 18: [-8.3, 115.2], 19: [-8.6, 117.4], 20: [-10.2, 123.6],
+      21: [0.0, 109.3], 22: [-1.5, 114.0], 23: [-3.1, 115.3], 24: [1.0, 116.5],
+      25: [3.0, 116.5], 26: [1.2, 124.8], 27: [-1.0, 121.0], 28: [-4.3, 120.2],
+      29: [-3.5, 122.0], 30: [0.5, 123.1], 31: [-2.5, 119.5],
+      32: [-3.5, 129.0], 33: [0.5, 128.0], 34: [-1.0, 133.0],
+      35: [-0.5, 132.0], 36: [-4.5, 138.0], 37: [-6.5, 139.0],
+      38: [-3.5, 137.0], 39: [-4.0, 139.0],
+    };
+    if (centers[prov.id]) {
+      setMapCenter(centers[prov.id]);
+      setMapZoom(7);
+    }
+
     setSubLoading(true);
     getKabupaten(prov.id).then(kabs => { setKabupatenList(kabs); setSubLoading(false); });
   };
 
-  const handleKabupatenClick = (kab) => {
+  const handleKabupatenClick = async (kab) => {
     setSelectedKabupaten(kab);
     setSelectedKecamatan(null);
     setKecamatanList([]);
     setKelurahanList([]);
+    if (selectedProvinsi) {
+      setSelectedRegion(`${selectedProvinsi.nama}, ${kab.nama}`);
+    }
+
     setSubLoading(true);
+    const coords = await geocodeAddress(`${kab.nama}, ${selectedProvinsi?.nama || ''}, Indonesia`);
+    if (coords) {
+      setMapCenter([coords.lat, coords.lng]);
+      setMapZoom(10);
+    }
+
     getKecamatan(kab.id).then(kecs => { setKecamatanList(kecs); setSubLoading(false); });
   };
 
-  const handleKecamatanClick = (kec) => {
+  const handleKecamatanClick = async (kec) => {
     setSelectedKecamatan(kec);
     setKelurahanList([]);
+    if (selectedProvinsi && selectedKabupaten) {
+      setSelectedRegion(`${selectedProvinsi.nama}, ${selectedKabupaten.nama}, ${kec.nama}`);
+    }
+
     setSubLoading(true);
+    const coords = await geocodeAddress(`${kec.nama}, ${selectedKabupaten?.nama || ''}, ${selectedProvinsi?.nama || ''}, Indonesia`);
+    if (coords) {
+      setMapCenter([coords.lat, coords.lng]);
+      setMapZoom(13);
+    }
+
     getKelurahan(kec.id).then(kels => { setKelurahanList(kels); setSubLoading(false); });
   };
 
   const handleBack = () => {
-    if (kelurahanList.length) { setKelurahanList([]); setSelectedKecamatan(null); }
-    else if (kecamatanList.length) { setKecamatanList([]); setKelurahanList([]); setSelectedKabupaten(null); }
-    else { setKabupatenList([]); setKecamatanList([]); setKelurahanList([]); setSelectedProvinsi(null); setSelectedRegion(null); setPrices(getPricesForProvince('default')); }
+    if (kelurahanList.length) {
+      setKelurahanList([]);
+      setSelectedKecamatan(null);
+      if (selectedProvinsi && selectedKabupaten) {
+        setSelectedRegion(`${selectedProvinsi.nama}, ${selectedKabupaten.nama}`);
+      }
+    }
+    else if (kecamatanList.length) {
+      setKecamatanList([]);
+      setKelurahanList([]);
+      setSelectedKabupaten(null);
+      if (selectedProvinsi) {
+        setSelectedRegion(selectedProvinsi.nama);
+      }
+    }
+    else {
+      setKabupatenList([]);
+      setKecamatanList([]);
+      setKelurahanList([]);
+      setSelectedProvinsi(null);
+      setSelectedRegion(null);
+      setPrices(getPricesForProvince('default'));
+      setMapCenter([-2.5, 117]);
+      setMapZoom(5);
+    }
+  };
+
+  const handleProvinsiSelect = async (provName) => {
+    const prov = provinsiList.find(p => p.nama === provName);
+    if (prov) {
+      setSelectedProvinsi(prov);
+      setSelectedKabupaten(null);
+      setSelectedKecamatan(null);
+      setKabupatenList([]);
+      setKecamatanList([]);
+      setKelurahanList([]);
+      setSelectedRegion(prov.nama);
+      setPrices(getPricesForProvince(prov.id));
+
+      const centers = {
+        1: [5.5, 95.3], 2: [3.6, 98.7], 3: [-0.5, 101.5], 4: [0.5, 101.4],
+        5: [-1.6, 103.6], 6: [-0.5, 104.5], 7: [-3.0, 104.8], 8: [-3.8, 102.3],
+        9: [-5.4, 105.3], 10: [-2.7, 107.6], 11: [1.0, 104.5], 12: [-6.2, 106.8],
+        13: [-6.9, 107.6], 14: [-6.4, 106.1], 15: [-7.2, 110.1], 16: [-7.8, 110.4],
+        17: [-7.5, 112.2], 18: [-8.3, 115.2], 19: [-8.6, 117.4], 20: [-10.2, 123.6],
+        21: [0.0, 109.3], 22: [-1.5, 114.0], 23: [-3.1, 115.3], 24: [1.0, 116.5],
+        25: [3.0, 116.5], 26: [1.2, 124.8], 27: [-1.0, 121.0], 28: [-4.3, 120.2],
+        29: [-3.5, 122.0], 30: [0.5, 123.1], 31: [-2.5, 119.5],
+        32: [-3.5, 129.0], 33: [0.5, 128.0], 34: [-1.0, 133.0],
+        35: [-0.5, 132.0], 36: [-4.5, 138.0], 37: [-6.5, 139.0],
+        38: [-3.5, 137.0], 39: [-4.0, 139.0],
+      };
+      if (centers[prov.id]) {
+        setMapCenter(centers[prov.id]);
+        setMapZoom(7);
+      }
+
+      setSubLoading(true);
+      const kabs = await getKabupaten(prov.id);
+      setKabupatenList(kabs);
+      setSubLoading(false);
+    } else {
+      setSelectedProvinsi(null);
+      setSelectedKabupaten(null);
+      setSelectedKecamatan(null);
+      setKabupatenList([]);
+      setKecamatanList([]);
+      setKelurahanList([]);
+      setSelectedRegion(null);
+      setPrices(getPricesForProvince('default'));
+      setMapCenter([-2.5, 117]);
+      setMapZoom(5);
+    }
+  };
+
+  const handleKabupatenSelect = async (kabName) => {
+    const kab = kabupatenList.find(k => k.nama === kabName);
+    if (kab) {
+      setSelectedKabupaten(kab);
+      setSelectedKecamatan(null);
+      setKecamatanList([]);
+      setKelurahanList([]);
+      if (selectedProvinsi) {
+        setSelectedRegion(`${selectedProvinsi.nama}, ${kab.nama}`);
+      }
+
+      setSubLoading(true);
+      const coords = await geocodeAddress(`${kab.nama}, ${selectedProvinsi?.nama || ''}, Indonesia`);
+      if (coords) {
+        setMapCenter([coords.lat, coords.lng]);
+        setMapZoom(10);
+      }
+
+      const kecs = await getKecamatan(kab.id);
+      setKecamatanList(kecs);
+      setSubLoading(false);
+    } else {
+      setSelectedKabupaten(null);
+      setSelectedKecamatan(null);
+      setKecamatanList([]);
+      setKelurahanList([]);
+      if (selectedProvinsi) {
+        setSelectedRegion(selectedProvinsi.nama);
+      }
+    }
+  };
+
+  const handleKecamatanSelect = async (kecName) => {
+    const kec = kecamatanList.find(k => k.nama === kecName);
+    if (kec) {
+      setSelectedKecamatan(kec);
+      setKelurahanList([]);
+      if (selectedProvinsi && selectedKabupaten) {
+        setSelectedRegion(`${selectedProvinsi.nama}, ${selectedKabupaten.nama}, ${kec.nama}`);
+      }
+
+      setSubLoading(true);
+      const coords = await geocodeAddress(`${kec.nama}, ${selectedKabupaten?.nama || ''}, ${selectedProvinsi?.nama || ''}, Indonesia`);
+      if (coords) {
+        setMapCenter([coords.lat, coords.lng]);
+        setMapZoom(13);
+      }
+
+      const kels = await getKelurahan(kec.id);
+      setKelurahanList(kels);
+      setSubLoading(false);
+    } else {
+      setSelectedKecamatan(null);
+      setKelurahanList([]);
+      if (selectedProvinsi && selectedKabupaten) {
+        setSelectedRegion(`${selectedProvinsi.nama}, ${selectedKabupaten.nama}`);
+      }
+    }
   };
 
   const formatRupiah = (val) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
-
-  const mapCenter = userLocation ? [userLocation.lat, userLocation.lng] : [-2.5, 117];
 
   const filteredProvinsi = provinsiList.filter(p =>
     p.nama.toLowerCase().includes(search.toLowerCase())
@@ -189,8 +442,9 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8">
             <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-1 overflow-hidden">
-              <MapContainer center={mapCenter} zoom={userLocation ? 10 : 5} className="h-[400px] md:h-[500px] w-full rounded-[18px]" scrollWheelZoom={true}>
+              <MapContainer center={mapCenter} zoom={mapZoom} className="h-[400px] md:h-[500px] w-full rounded-[18px]" scrollWheelZoom={true}>
                 <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapController center={mapCenter} zoom={mapZoom} />
                 {userLocation && (
                   <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
                     <Popup>
@@ -217,68 +471,183 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
           </div>
 
           <div className="lg:col-span-4 space-y-4">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6F7178]" />
-              <input type="text" placeholder={kelurahanList.length ? 'Cari desa...' : kecamatanList.length ? 'Cari kecamatan...' : kabupatenList.length ? 'Cari kota...' : 'Cari provinsi...'} value={search} onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E8E8E8] rounded-xl text-xs font-medium focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 focus-ring" />
+            {/* Tab Selector */}
+            <div className="flex bg-[#F8ECD2]/50 p-1 rounded-xl border border-[#E8E8E8] gap-1">
+              <button
+                type="button"
+                onClick={() => setLocationMode('explore')}
+                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all press ${
+                  locationMode === 'explore'
+                    ? 'bg-[#FF6B1A] text-white shadow-sm'
+                    : 'text-[#6F7178] hover:text-[#FF6B1A]'
+                }`}
+              >
+                Daftar Wilayah
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocationMode('manual')}
+                className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all press ${
+                  locationMode === 'manual'
+                    ? 'bg-[#FF6B1A] text-white shadow-sm'
+                    : 'text-[#6F7178] hover:text-[#FF6B1A]'
+                }`}
+              >
+                Pilih Manual
+              </button>
             </div>
 
-            {(kabupatenList.length > 0 || kecamatanList.length > 0 || kelurahanList.length > 0) && (
-              <button onClick={handleBack} className="text-xs text-[#FF6B1A] font-bold hover:underline flex items-center gap-1 press-sm">
-                <ChevronLeft className="w-3 h-3" />Kembali
-              </button>
-            )}
-
-            <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-4">
-              <h4 className="font-bold text-xs text-[#171C38] mb-3">{getLevelTitle()}</h4>
-              {subLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-[#FF6B1A] border-t-transparent rounded-full animate-spin" />
+            {locationMode === 'explore' ? (
+              <>
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6F7178]" />
+                  <input type="text" placeholder={kelurahanList.length ? 'Cari desa...' : kecamatanList.length ? 'Cari kecamatan...' : kabupatenList.length ? 'Cari kota...' : 'Cari provinsi...'} value={search} onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 bg-white border border-[#E8E8E8] rounded-xl text-xs font-medium focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 focus-ring" />
                 </div>
-              ) : (
-              <div className="space-y-1 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
-                {loading && <p className="text-xs text-[#6F7178] text-center py-4">Memuat data...</p>}
 
-                {/* Province level */}
-                {!kabupatenList.length && !loading && filteredProvinsi.map(p => (
-                  <button key={p.id} onClick={() => handleProvinsiClick(p)}
-                    className={`w-full text-left p-3 rounded-xl text-xs transition-all press ${selectedProvinsi?.id === p.id ? 'bg-[#FF6B1A]/10 border border-[#FF6B1A]/20' : 'hover:bg-[#F8ECD2]/50 border border-transparent'}`}>
-                    <span className="font-bold text-[#171C38]">{p.nama}</span>
+                {(kabupatenList.length > 0 || kecamatanList.length > 0 || kelurahanList.length > 0) && (
+                  <button onClick={handleBack} className="text-xs text-[#FF6B1A] font-bold hover:underline flex items-center gap-1 press-sm">
+                    <ChevronLeft className="w-3 h-3" />Kembali
                   </button>
-                ))}
-
-                {/* City level */}
-                {kabupatenList.length > 0 && !kecamatanList.length && filteredKabupaten.map(k => (
-                  <button key={k.id} onClick={() => handleKabupatenClick(k)}
-                    className={`w-full text-left p-3 rounded-xl text-xs transition-all press ${selectedKabupaten?.id === k.id ? 'bg-[#FF6B1A]/10 border border-[#FF6B1A]/20' : 'hover:bg-[#F8ECD2]/50 border border-transparent'}`}>
-                    <span className="font-bold text-[#171C38]">{k.nama}</span>
-                  </button>
-                ))}
-
-                {/* District level */}
-                {kecamatanList.length > 0 && !kelurahanList.length && kecamatanList.filter(k => k.nama.toLowerCase().includes(search.toLowerCase())).map(k => (
-                  <button key={k.id} onClick={() => handleKecamatanClick(k)}
-                    className={`w-full text-left p-3 rounded-xl text-xs transition-all press ${selectedKecamatan?.id === k.id ? 'bg-[#FF6B1A]/10 border border-[#FF6B1A]/20' : 'hover:bg-[#F8ECD2]/50 border border-transparent'}`}>
-                    <span className="font-bold text-[#171C38]">{k.nama}</span>
-                  </button>
-                ))}
-
-                {/* Village level */}
-                {kelurahanList.length > 0 && kelurahanList.filter(k => k.nama.toLowerCase().includes(search.toLowerCase())).map(k => (
-                  <div key={k.id} className="p-3 rounded-xl text-xs border border-transparent hover:bg-[#F8ECD2]/50">
-                    <span className="font-medium text-[#171C38]">{k.nama}</span>
-                  </div>
-                ))}
-
-                {!loading && kabupatenList.length === 0 && kecamatanList.length === 0 && kelurahanList.length === 0 && filteredProvinsi.length === 0 && (
-                  <p className="text-xs text-[#6F7178] text-center py-4">Wilayah tidak ditemukan.</p>
                 )}
-                {kabupatenList.length > 0 && kecamatanList.length === 0 && kelurahanList.length === 0 && filteredKabupaten.length === 0 && (
-                  <p className="text-xs text-[#6F7178] text-center py-4">Kabupaten/kota tidak ditemukan.</p>
+
+                <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-4">
+                  <h4 className="font-bold text-xs text-[#171C38] mb-3">{getLevelTitle()}</h4>
+                  {subLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-[#FF6B1A] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : (
+                  <div className="space-y-1 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                    {loading && <p className="text-xs text-[#6F7178] text-center py-4">Memuat data...</p>}
+
+                    {/* Province level */}
+                    {!kabupatenList.length && !loading && filteredProvinsi.map(p => (
+                      <button key={p.id} onClick={() => handleProvinsiClick(p)}
+                        className={`w-full text-left p-3 rounded-xl text-xs transition-all press ${selectedProvinsi?.id === p.id ? 'bg-[#FF6B1A]/10 border border-[#FF6B1A]/20' : 'hover:bg-[#F8ECD2]/50 border border-transparent'}`}>
+                        <span className="font-bold text-[#171C38]">{p.nama}</span>
+                      </button>
+                    ))}
+
+                    {/* City level */}
+                    {kabupatenList.length > 0 && !kecamatanList.length && filteredKabupaten.map(k => (
+                      <button key={k.id} onClick={() => handleKabupatenClick(k)}
+                        className={`w-full text-left p-3 rounded-xl text-xs transition-all press ${selectedKabupaten?.id === k.id ? 'bg-[#FF6B1A]/10 border border-[#FF6B1A]/20' : 'hover:bg-[#F8ECD2]/50 border border-transparent'}`}>
+                        <span className="font-bold text-[#171C38]">{k.nama}</span>
+                      </button>
+                    ))}
+
+                    {/* District level */}
+                    {kecamatanList.length > 0 && !kelurahanList.length && kecamatanList.filter(k => k.nama.toLowerCase().includes(search.toLowerCase())).map(k => (
+                      <button key={k.id} onClick={() => handleKecamatanClick(k)}
+                        className={`w-full text-left p-3 rounded-xl text-xs transition-all press ${selectedKecamatan?.id === k.id ? 'bg-[#FF6B1A]/10 border border-[#FF6B1A]/20' : 'hover:bg-[#F8ECD2]/50 border border-transparent'}`}>
+                        <span className="font-bold text-[#171C38]">{k.nama}</span>
+                      </button>
+                    ))}
+
+                    {/* Village level */}
+                    {kelurahanList.length > 0 && kelurahanList.filter(k => k.nama.toLowerCase().includes(search.toLowerCase())).map(k => (
+                      <div key={k.id} className="p-3 rounded-xl text-xs border border-transparent hover:bg-[#F8ECD2]/50">
+                        <span className="font-medium text-[#171C38]">{k.nama}</span>
+                      </div>
+                    ))}
+
+                    {!loading && kabupatenList.length === 0 && kecamatanList.length === 0 && kelurahanList.length === 0 && filteredProvinsi.length === 0 && (
+                      <p className="text-xs text-[#6F7178] text-center py-4">Wilayah tidak ditemukan.</p>
+                    )}
+                    {kabupatenList.length > 0 && kecamatanList.length === 0 && kelurahanList.length === 0 && filteredKabupaten.length === 0 && (
+                      <p className="text-xs text-[#6F7178] text-center py-4">Kabupaten/kota tidak ditemukan.</p>
+                    )}
+                  </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-4 space-y-4 animate-fade-in text-left">
+                <h4 className="font-bold text-xs text-[#171C38] mb-1">Pilih Wilayah Manual</h4>
+                
+                {/* Dropdown Provinsi */}
+                <div>
+                  <label htmlFor="manual-provinsi" className="block text-[10px] font-bold text-[#6F7178] mb-1">Provinsi</label>
+                  <select
+                    id="manual-provinsi"
+                    value={selectedProvinsi?.nama || ''}
+                    onChange={(e) => handleProvinsiSelect(e.target.value)}
+                    className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-2.5 text-xs font-semibold focus-ring"
+                  >
+                    <option value="">-- Pilih Provinsi --</option>
+                    {provinsiList.map((p) => (
+                      <option key={p.id} value={p.nama}>
+                        {p.nama}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Dropdown Kabupaten */}
+                {selectedProvinsi && (
+                  <div className="animate-fade-in">
+                    <label htmlFor="manual-kabupaten" className="block text-[10px] font-bold text-[#6F7178] mb-1">Kabupaten/Kota</label>
+                    <select
+                      id="manual-kabupaten"
+                      value={selectedKabupaten?.nama || ''}
+                      onChange={(e) => handleKabupatenSelect(e.target.value)}
+                      className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-2.5 text-xs font-semibold focus-ring"
+                    >
+                      <option value="">-- Pilih Kabupaten/Kota --</option>
+                      {kabupatenList.map((k) => (
+                        <option key={k.id} value={k.nama}>
+                          {k.nama}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Dropdown Kecamatan */}
+                {selectedProvinsi && selectedKabupaten && (
+                  <div className="animate-fade-in">
+                    <label htmlFor="manual-kecamatan" className="block text-[10px] font-bold text-[#6F7178] mb-1">Kecamatan</label>
+                    <select
+                      id="manual-kecamatan"
+                      value={selectedKecamatan?.nama || ''}
+                      onChange={(e) => handleKecamatanSelect(e.target.value)}
+                      className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl p-2.5 text-xs font-semibold focus-ring"
+                    >
+                      <option value="">-- Pilih Kecamatan --</option>
+                      {kecamatanList.map((k) => (
+                        <option key={k.id} value={k.nama}>
+                          {k.nama}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Kelurahan List */}
+                {selectedProvinsi && selectedKabupaten && selectedKecamatan && (
+                  <div className="border-t border-[#E8E8E8]/50 pt-3 animate-fade-in">
+                    <label className="block text-[10px] font-bold text-[#6F7178] mb-2">Desa/Kelurahan Terdaftar</label>
+                    {subLoading ? (
+                      <div className="flex justify-center py-4">
+                        <div className="w-5 h-5 border-2 border-[#FF6B1A] border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : (
+                      <div className="space-y-1 max-h-[140px] overflow-y-auto pr-1 custom-scrollbar">
+                        {kelurahanList.map((k) => (
+                          <div key={k.id} className="p-2 rounded-lg text-[11px] border border-transparent hover:bg-[#F8ECD2]/50 text-[#171C38] font-medium">
+                            {k.nama}
+                          </div>
+                        ))}
+                        {kelurahanList.length === 0 && (
+                          <p className="text-[11px] text-[#6F7178] text-center py-2">Tidak ada desa terdaftar.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-              )}
-            </div>
+            )}
 
             {/* Regional Prices */}
             {selectedProvinsi && (

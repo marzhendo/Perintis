@@ -14,6 +14,7 @@ class ValidateRequest(BaseModel):
     nama_usaha: Optional[str] = "Usaha Baru"
     deskripsi_ide: str
     target_pasar: str
+    lokasi: Optional[str] = "Seluruh Indonesia"
 
 
 # ---------------------------------------------------------------------------

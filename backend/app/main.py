@@ -15,6 +15,13 @@ app = FastAPI(title="Perintis API")
 # ---------------------------------------------------------------------------
 Base.metadata.create_all(bind=engine)
 
+@app.on_event("startup")
+def startup_event():
+    import threading
+    from .services.pihps_service import start_price_updater
+    thread = threading.Thread(target=start_price_updater, daemon=True)
+    thread.start()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

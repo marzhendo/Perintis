@@ -13,6 +13,7 @@ export async function validateBusiness(form) {
         nama_usaha: form.businessName || 'Usaha Baru',
         deskripsi_ide: form.description,
         target_pasar: form.targetMarket.join(', '),
+        lokasi: form.location || 'Seluruh Indonesia',
       }),
       signal: controller.signal,
     });
