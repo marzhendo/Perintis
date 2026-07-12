@@ -10,6 +10,10 @@ from . import models  # noqa: F401 — import agar SQLAlchemy mendaftarkan semua
 
 app = FastAPI(title="Perintis API")
 
+from .core.rate_limit import limiter
+from slowapi.errors import RateLimitExceeded
+app.state.limiter = limiter
+
 # ---------------------------------------------------------------------------
 # Inisialisasi database — create tables if not exist
 # ---------------------------------------------------------------------------
@@ -22,9 +26,13 @@ def startup_event():
     thread = threading.Thread(target=start_price_updater, daemon=True)
     thread.start()
 
+import os
+
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[frontend_url, "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -75,6 +83,14 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=422,
         content={"message": message, "code": "VALIDATION_ERROR"},
+    )
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"message": "Terlalu banyak permintaan. Silakan coba lagi nanti.", "code": "RATE_LIMITED"},
     )
 
 

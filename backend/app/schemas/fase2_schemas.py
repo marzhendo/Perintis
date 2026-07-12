@@ -1,12 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 
 # --- Forum Schemas ---
 
 class ForumThreadCreate(BaseModel):
-    title: str
+    title: str = Field(..., max_length=200)
     category: str
-    content: str
+    content: str = Field(..., max_length=2000)
 
 class AuthorInfo(BaseModel):
     name: str
@@ -26,7 +26,7 @@ class ForumThreadResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 class ForumCommentCreate(BaseModel):
-    content: str
+    content: str = Field(..., max_length=1000)
 
 class ForumCommentResponse(BaseModel):
     id: int
@@ -73,6 +73,6 @@ class ProfileStatsResponse(BaseModel):
     recent_activities: list[UserActivityResponse]
 
 class ProfileUpdateRequest(BaseModel):
-    name: str | None = None
-    phone: str | None = None
-    bio: str | None = None
+    name: str | None = Field(None, max_length=100)
+    phone: str | None = Field(None, max_length=20)
+    bio: str | None = Field(None, max_length=500)

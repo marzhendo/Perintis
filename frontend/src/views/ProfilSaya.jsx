@@ -1,9 +1,151 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, Calendar, Shield, Edit2, Save, X, Clock, TrendingUp, Award, MessageSquare, LogOut, Camera, Bell } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Shield, Edit2, Save, X, Clock, TrendingUp, Award, MessageSquare, LogOut, Camera, Bell, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 
 import { fetchApi } from '../services/apiClient';
 
+function ChangePasswordModal({ isOpen, onClose }) {
+  const [form, setForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
+  const [showOld, setShowOld] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  const hasMinLength = (pw) => pw.length >= 8;
+  const hasLetterAndNumber = (pw) => /[a-zA-Z]/.test(pw) && /[0-9]/.test(pw);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!form.oldPassword) return setError('Password lama wajib diisi');
+    if (!form.newPassword) return setError('Password baru wajib diisi');
+    if (!hasMinLength(form.newPassword) || !hasLetterAndNumber(form.newPassword)) {
+      return setError('Password baru tidak memenuhi syarat minimum');
+    }
+    if (form.newPassword !== form.confirmPassword) {
+      return setError('Konfirmasi password tidak sama');
+    }
+
+    setLoading(true);
+    try {
+      await fetchApi('/api/auth/change-password', {
+        method: 'PATCH',
+        body: JSON.stringify({ old_password: form.oldPassword, new_password: form.newPassword })
+      });
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+        setSuccess(false);
+        setForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      }, 2000);
+    } catch (err) {
+      if (err.status === 401) {
+        setError('Password lama salah');
+      } else if (err.status === 422 || err.code === 'VALIDATION_ERROR') {
+        setError('Password baru tidak memenuhi syarat');
+      } else {
+        setError(err.message || 'Gagal mengubah password');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputClass = (isError) => `w-full bg-white border ${isError ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-[#E8E8E8] focus:border-[#FF6B1A] focus:ring-[#FF6B1A]/10'} focus:outline-none focus:ring-2 rounded-[18px] py-2.5 pl-10 pr-10 text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] transition-all focus-ring`;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(23, 28, 56, 0.4)' }}>
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-white rounded-[24px] p-6 shadow-[0_8px_32px_rgba(23,28,56,0.12)] animate-scale-in text-left">
+        <button onClick={onClose} className="absolute right-4 top-4 text-[#6F7178] hover:text-[#171C38] p-1.5 rounded-full hover:bg-[#F8ECD2]/50 transition-colors focus-ring">
+          <X className="w-5 h-5" />
+        </button>
+
+        {success ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center animate-bounce-in">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ backgroundColor: 'rgba(255, 107, 26, 0.1)' }}>
+              <CheckCircle className="w-10 h-10 text-[#FF6B1A]" />
+            </div>
+            <h3 className="text-lg font-extrabold text-[#171C38] mb-1">Password Berhasil Diubah!</h3>
+            <p className="text-xs text-[#6F7178]">Gunakan password baru Anda mulai sekarang.</p>
+          </div>
+        ) : (
+          <div>
+            <h3 className="text-lg font-extrabold text-[#171C38] mb-1">Ubah Password</h3>
+            <p className="text-xs text-[#6F7178] mb-5">Perbarui kata sandi untuk keamanan akun Anda.</p>
+
+            {error && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-2xl p-3 mb-4">
+                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <p className="text-xs font-semibold text-red-600">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#171C38] mb-1.5">Password Lama</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-[#6F7178] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input type={showOld ? 'text' : 'password'} placeholder="Masukkan password lama" value={form.oldPassword} onChange={e => {setForm({...form, oldPassword: e.target.value}); setError('')}} className={inputClass(false)} />
+                  <button type="button" onClick={() => setShowOld(!showOld)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6F7178] hover:text-[#171C38] focus-ring">
+                    {showOld ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#171C38] mb-1.5">Password Baru</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-[#6F7178] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input type={showNew ? 'text' : 'password'} placeholder="Buat password baru" value={form.newPassword} onChange={e => {setForm({...form, newPassword: e.target.value}); setError('')}} onFocus={() => setShowHint(true)} onBlur={() => setShowHint(false)} className={inputClass(false)} />
+                  <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6F7178] hover:text-[#171C38] focus-ring">
+                    {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+
+                  {showHint && (
+                    <div className="absolute top-full left-0 mt-2 w-full bg-white border border-[#E8E8E8] shadow-[0_4px_12px_rgba(23,28,56,0.08)] rounded-xl p-3 z-50 animate-scale-in pointer-events-none">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className={`w-4 h-4 flex-shrink-0 transition-colors ${hasMinLength(form.newPassword) ? 'text-green-500' : 'text-[#D1D1D1]'}`} />
+                        <span className={`text-xs font-semibold transition-colors ${hasMinLength(form.newPassword) ? 'text-[#171C38]' : 'text-[#6F7178]'}`}>Minimal 8 karakter</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className={`w-4 h-4 flex-shrink-0 transition-colors ${hasLetterAndNumber(form.newPassword) ? 'text-green-500' : 'text-[#D1D1D1]'}`} />
+                        <span className={`text-xs font-semibold transition-colors ${hasLetterAndNumber(form.newPassword) ? 'text-[#171C38]' : 'text-[#6F7178]'}`}>Kombinasi huruf & angka</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#171C38] mb-1.5">Konfirmasi Password Baru</label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-[#6F7178] absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input type={showConfirm ? 'text' : 'password'} placeholder="Ulangi password baru" value={form.confirmPassword} onChange={e => {setForm({...form, confirmPassword: e.target.value}); setError('')}} className={inputClass(false)} />
+                  <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6F7178] hover:text-[#171C38] focus-ring">
+                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" disabled={loading} className="w-full mt-2 bg-gradient-to-r from-[#FF6B1A] to-[#FF8A3D] text-white rounded-[18px] py-3 font-bold text-xs hover:shadow-lg hover:shadow-[#FF6B1A]/20 transition-all flex items-center justify-center gap-2 press">
+                {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <span>Simpan Password</span>}
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ProfilSaya({ user, onLogout, onOpenAuth }) {
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statsData, setStatsData] = useState(null);
@@ -262,7 +404,7 @@ export default function ProfilSaya({ user, onLogout, onOpenAuth }) {
           <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 md:p-8 text-left card-lift">
             <h3 className="font-bold text-[#171C38] text-sm mb-4">Pengaturan Akun</h3>
             <div className="space-y-3">
-              <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#F8ECD2]/50 transition-colors text-left press">
+              <button onClick={() => setShowPasswordModal(true)} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#F8ECD2]/50 transition-colors text-left press">
                 <div className="flex items-center gap-3">
                   <Shield className="w-4 h-4 text-[#6F7178]" />
                   <div>
@@ -272,12 +414,12 @@ export default function ProfilSaya({ user, onLogout, onOpenAuth }) {
                 </div>
                 <svg className="w-4 h-4 text-[#6F7178]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </button>
-              <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#F8ECD2]/50 transition-colors text-left press">
+              <button disabled type="button" className="w-full flex items-center justify-between p-3 rounded-xl text-left bg-gray-50 border border-transparent opacity-50 cursor-not-allowed">
                 <div className="flex items-center gap-3">
                   <Bell className="w-4 h-4 text-[#6F7178]" />
                   <div>
                     <p className="text-xs font-semibold text-[#171C38]">Preferensi Notifikasi</p>
-                    <p className="text-[10px] text-[#6F7178]">Atur notifikasi yang ingin Anda terima</p>
+                    <p className="text-[10px] text-[#6F7178]">Segera hadir</p>
                   </div>
                 </div>
                 <svg className="w-4 h-4 text-[#6F7178]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
@@ -296,6 +438,7 @@ export default function ProfilSaya({ user, onLogout, onOpenAuth }) {
           </div>
         </div>
       </div>
+      <ChangePasswordModal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} />
     </div>
   );
 }

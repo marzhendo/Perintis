@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator, Field
+import re
 from typing import Optional
 from datetime import datetime
 
@@ -11,10 +12,10 @@ class CalculateRequest(BaseModel):
 
 
 class ValidateRequest(BaseModel):
-    nama_usaha: Optional[str] = "Usaha Baru"
-    deskripsi_ide: str
-    target_pasar: str
-    lokasi: Optional[str] = "Seluruh Indonesia"
+    nama_usaha: Optional[str] = Field("Usaha Baru", max_length=100)
+    deskripsi_ide: str = Field(..., max_length=300)
+    target_pasar: str = Field(..., max_length=300)
+    lokasi: Optional[str] = Field("Seluruh Indonesia", max_length=100)
 
 
 # ---------------------------------------------------------------------------
@@ -24,12 +25,35 @@ class ValidateRequest(BaseModel):
 class UserRegister(BaseModel):
     email: EmailStr
     password: str
-    name: str
+    name: str = Field(..., max_length=100)
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Password minimal 8 karakter dan harus mengandung kombinasi huruf serta angka')
+        if not re.search(r'[A-Za-z]', v) or not re.search(r'\d', v):
+            raise ValueError('Password minimal 8 karakter dan harus mengandung kombinasi huruf serta angka')
+        return v
 
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Password minimal 8 karakter dan harus mengandung kombinasi huruf serta angka')
+        if not re.search(r'[A-Za-z]', v) or not re.search(r'\d', v):
+            raise ValueError('Password minimal 8 karakter dan harus mengandung kombinasi huruf serta angka')
+        return v
 
 
 class UserResponse(BaseModel):
