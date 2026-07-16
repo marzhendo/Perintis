@@ -280,7 +280,7 @@ export default function RecipeCostForm() {
               </div>
             </div>
           )}
-        </div>div>
+        </div>
 
       </div>
     </div>
