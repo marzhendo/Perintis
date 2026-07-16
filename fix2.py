@@ -1,29 +1,12 @@
-"""
-Commodity Service — Sajikan data harga pangan dari Bank Indonesia.
-Data diambil dari commodity_prices.json yang diperbarui setiap hari jam 7 pagi
-oleh pihps_service.py yang melakukan scraping dari www.bi.go.id/hargapangan.
-
-Endpoint GET /commodities?province={nama_provinsi}:
-  - Tanpa parameter / province='Semua Provinsi': harga nasional
-  - province='DKI Jakarta': harga nasional (data provinsi per komoditas belum tersedia untuk semua komoditas)
-  
-Catatan: Data harga per provinsi dari BI hanya tersedia untuk komoditas yang
-sedang ditampilkan di peta vectormap halaman awal (default: Beras Kualitas Medium I).
-Untuk komoditas lain, harga nasional yang digunakan.
-"""
-from __future__ import annotations
 import json
-import os
 from datetime import datetime
+import os
+import re
 
+with open('backend/app/services/commodity_service.py', 'r', encoding='utf-8') as f:
+    com_code = f.read()
 
-def _load_data() -> dict:
-    path = os.path.join(os.path.dirname(__file__), "..", "data", "commodity_prices.json")
-    with open(path, encoding="utf-8") as f:
-        return json.load(f)
-
-
-def get_all_commodities(region: str | None = None):
+new_get_all = '''def get_all_commodities(region: str | None = None):
     """
     Return commodity prices.
     
@@ -80,3 +63,8 @@ def get_all_commodities(region: str | None = None):
             result.append(adj)
             
     return result
+'''
+
+com_code = re.sub(r'def get_all_commodities\(.*', new_get_all, com_code, flags=re.DOTALL)
+with open('backend/app/services/commodity_service.py', 'w', encoding='utf-8') as f:
+    f.write(com_code)

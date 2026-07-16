@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { User, Mail, Phone, Calendar, Shield, Edit2, Save, X, Clock, TrendingUp, Award, MessageSquare, LogOut, Camera, Bell, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
 
 import { fetchApi } from '../services/apiClient';
@@ -58,8 +59,8 @@ function ChangePasswordModal({ isOpen, onClose }) {
 
   const inputClass = (isError) => `w-full bg-white border ${isError ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-[#E8E8E8] focus:border-[#FF6B1A] focus:ring-[#FF6B1A]/10'} focus:outline-none focus:ring-2 rounded-[18px] py-2.5 pl-10 pr-10 text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] transition-all focus-ring`;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(23, 28, 56, 0.4)' }}>
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(23, 28, 56, 0.4)' }}>
       <div className="absolute inset-0" onClick={onClose} />
       <div className="relative w-full max-w-md bg-white rounded-[24px] p-6 shadow-[0_8px_32px_rgba(23,28,56,0.12)] animate-scale-in text-left">
         <button onClick={onClose} className="absolute right-4 top-4 text-[#6F7178] hover:text-[#171C38] p-1.5 rounded-full hover:bg-[#F8ECD2]/50 transition-colors focus-ring">
@@ -140,7 +141,8 @@ function ChangePasswordModal({ isOpen, onClose }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

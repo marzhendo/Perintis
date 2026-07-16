@@ -79,7 +79,7 @@ export default function App() {
   return (
     <ErrorBoundary>
     <ToastProvider>
-    <div className="min-h-screen bg-[#FAF6EE] text-[#171C38] antialiased selection:bg-[#FF6B1A]/20 selection:text-[#171C38] relative overflow-x-hidden flex flex-col justify-between">
+    <div className="min-h-screen bg-[#FAF6EE] text-[#171C38] antialiased selection:bg-[#FF6B1A]/20 selection:text-[#171C38] relative overflow-x-hidden flex flex-col">
       <FuturisticBackground />
       <Header activeTab={activeTab} setActiveTab={handleTabChange} user={user} unreadCount={unreadCount} onOpenAuth={() => setAuthModalOpen(true)} onLogout={logout} />
       <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
@@ -111,7 +111,7 @@ export default function App() {
 
       <div className="lg:hidden fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#FAF6EE] to-transparent pointer-events-none z-40" />
 
-      <main className="flex-grow w-full px-4 sm:px-6 lg:px-10 pt-20 lg:pt-32 pb-32 lg:pb-16 max-w-[1200px] mx-auto box-border">
+      <main className="flex-1 w-full px-4 sm:px-6 lg:px-10 pt-20 lg:pt-32 pb-32 lg:pb-16 max-w-[1200px] mx-auto box-border">
         <div key={activeTab} className="animate-fade-in">
           {renderView()}
         </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { MessageSquare, ThumbsUp, Plus, Search, MessageCircle, User, ArrowLeft, X } from 'lucide-react';
 import { fetchApi } from '../services/apiClient';
 
@@ -370,8 +371,8 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
       )}
 
       {/* CREATE THREAD MODAL */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171C38]/80 backdrop-blur-sm animate-fade-in">
+      {modalOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#171C38]/80 backdrop-blur-sm animate-fade-in">
           <div className="glass-card rounded-[20px] w-full max-w-lg animate-scale-in text-left p-6 md:p-8 shadow-2xl shadow-orange-500/10 border border-[#FF6B1A]/30">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold text-[#171C38]">Mulai Diskusi Baru</h3>
@@ -430,7 +431,8 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
