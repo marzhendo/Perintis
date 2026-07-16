@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { validateBusiness, getFallbackResult } from '../services/validatorApi';
+import { fetchViralTrends } from '../services/trendsApi';
 import { useToast } from '../components/Toast';
 import ValidatorForm from '../components/ValidatorForm';
 import ValidatorResult from '../components/ValidatorResult';
 import { getProvinsi, getKabupaten, getKecamatan } from '../services/areaService';
-import { Sparkles, Zap } from 'lucide-react';
+import { Sparkles, Zap, Loader2 } from 'lucide-react';
 
 const formatRupiah = (val) => {
   return new Intl.NumberFormat('id-ID', {
@@ -12,68 +13,6 @@ const formatRupiah = (val) => {
   }).format(val);
 };
 
-const VIRAL_TRENDS = [
-  {
-    name: 'Es Teh Manis Solo',
-    desc: 'Minuman es teh manis ukuran jumbo dengan wangi melati khas Jawa Tengah seharga Rp 3.000.',
-    viralScore: 95,
-    longevity: 'Sedang-Panjang',
-    capitalLabel: 'Kecil (< Rp 5jt)',
-    preset: {
-      businessName: 'Es Teh Manis Solo Maknyus',
-      category: 'Kuliner',
-      description: 'Menyediakan minuman es teh manis ukuran jumbo dengan wangi melati khas racikan lokal dengan harga Rp 3.000 per cup.',
-      targetMarket: ['Mahasiswa', 'Umum'],
-      channels: ['Offline/Warung'],
-      capital: 3000000
-    }
-  },
-  {
-    name: 'Croissant Geprek (Croger)',
-    desc: 'Perpaduan pastry croissant mentega yang renyah dengan isi ayam geprek sambal bawang super pedas.',
-    viralScore: 88,
-    longevity: 'Jangka Pendek',
-    capitalLabel: 'Menengah (Rp 5-15jt)',
-    preset: {
-      businessName: 'Croger - Croissant Geprek Pedas',
-      category: 'Kuliner',
-      description: 'Perpaduan pastry renyah croissant mentega dengan isian ayam geprek sambal bawang super pedas.',
-      targetMarket: ['Mahasiswa'],
-      channels: ['Online/Sosmed', 'Delivery App'],
-      capital: 8000000
-    }
-  },
-  {
-    name: 'Toko Kelontong Pojok Madura',
-    desc: 'Toko kelontong modern yang buka 24 jam dengan display rapi, menjual sembako dengan harga kompetitif.',
-    viralScore: 90,
-    longevity: 'Sangat Panjang',
-    capitalLabel: 'Besar (> Rp 15jt)',
-    preset: {
-      businessName: 'Toko Kelontong Berkah 24 Jam',
-      category: 'Ritel',
-      description: 'Toko kelontong yang buka 24 jam dengan penataan barang rapi, pelayanan ramah, dan menjual kebutuhan sembako pokok.',
-      targetMarket: ['Ibu Rumah Tangga', 'Umum'],
-      channels: ['Offline/Warung'],
-      capital: 25000000
-    }
-  },
-  {
-    name: 'Jasa Cuci Sepatu (Shoes Clean)',
-    desc: 'Layanan cuci sepatu premium dengan sabun khusus ramah lingkungan dan sistem jemput-antar.',
-    viralScore: 80,
-    longevity: 'Jangka Panjang',
-    capitalLabel: 'Kecil (< Rp 5jt)',
-    preset: {
-      businessName: 'ShoesClean Premium Laundry',
-      category: 'Jasa',
-      description: 'Jasa pembersihan sepatu premium dengan sabun khusus ramah lingkungan, pembersihan noda membandel, dan gratis jemput-antar.',
-      targetMarket: ['Mahasiswa', 'Pekerja Kantoran'],
-      channels: ['Online/Sosmed'],
-      capital: 4000000
-    }
-  }
-];
 
 export default function Validator({ validationData, setValidationData, selectedRegion, setSelectedRegion }) {
   const [loading, setLoading] = useState(false);
@@ -81,6 +20,11 @@ export default function Validator({ validationData, setValidationData, selectedR
   const [provinsiList, setProvinsiList] = useState([]);
   const [kabupatenList, setKabupatenList] = useState([]);
   const [kecamatanList, setKecamatanList] = useState([]);
+
+  // Tren bisnis viral — di-fetch dari /api/trends saat mount
+  const [trends, setTrends] = useState([]);
+  const [isAiTrends, setIsAiTrends] = useState(false);
+  const [trendsLoading, setTrendsLoading] = useState(true);
 
   // Parse selectedRegion string (e.g. "JAWA BARAT, KOTA BEKASI, JATIASIH")
   const parseRegionString = (str) => {
@@ -111,6 +55,25 @@ export default function Validator({ validationData, setValidationData, selectedR
     getProvinsi().then(list => {
       setProvinsiList(list.sort((a, b) => a.nama.localeCompare(b.nama)));
     });
+  }, []);
+
+  // Fetch tren dari API saat mount — biasanya instant karena cached di backend
+  useEffect(() => {
+    let cancelled = false;
+    fetchViralTrends()
+      .then((data) => {
+        if (cancelled) return;
+        setTrends(data.trends ?? []);
+        setIsAiTrends(data.is_ai_generated ?? false);
+      })
+      .catch(() => {
+        // Network/server error total — FE tidak crash, section cukup kosong
+        if (!cancelled) setTrends([]);
+      })
+      .finally(() => {
+        if (!cancelled) setTrendsLoading(false);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   // Initialize kabupaten and kecamatan lists if province/kabupaten are pre-selected
@@ -234,12 +197,18 @@ export default function Validator({ validationData, setValidationData, selectedR
     }
   };
 
+  // Mapping preset dari snake_case API ke camelCase yang dibutuhkan ValidatorForm
   const handleUsePreset = (preset) => {
     setForm({
       ...form,
-      ...preset
+      businessName: preset.business_name,
+      category: preset.category,
+      description: preset.description,
+      // targetMarket & channels tidak digenerate Gemini — pakai default umum
+      targetMarket: ['Umum'],
+      channels: ['Offline/Warung'],
     });
-    toast.success(`Ide "${preset.businessName}" berhasil dimuat! Silakan klik Analisa Bisnis.`);
+    toast.success(`Ide "${preset.business_name}" berhasil dimuat! Silakan klik Analisa Bisnis.`);
     window.scrollTo({ top: 100, behavior: 'smooth' });
   };
 
@@ -281,47 +250,74 @@ export default function Validator({ validationData, setValidationData, selectedR
         <div className="border-b border-[#E8E8E8] pb-4">
           <h3 className="text-lg font-bold text-[#171C38] flex items-center gap-2 font-sans">
             <Zap className="w-5 h-5 text-[#FF6B1A]" />
-            <span>Detektor Tren Bisnis Viral (AI)</span>
+            <span>Detektor Tren Bisnis Viral</span>
+            {/* Label AI hanya tampil jika data benar-benar dari Gemini */}
+            {isAiTrends && (
+              <span className="text-[9px] font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded-full tracking-wide">
+                AI
+              </span>
+            )}
           </h3>
-          <p className="text-[10px] text-[#6F7178] font-bold mt-0.5">Inspirasi ide usaha mikro yang sedang naik daun di masyarakat Indonesia saat ini.</p>
+          <p className="text-[10px] text-[#6F7178] font-bold mt-0.5">
+            Inspirasi ide usaha mikro yang sedang naik daun di masyarakat Indonesia saat ini.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-          {VIRAL_TRENDS.map((trend, idx) => (
-            <div key={idx} className="bg-[#171C38]/5 border border-[#E8E8E8] rounded-2xl p-4 flex flex-col justify-between h-[210px] text-left hover:border-slate-300 transition-colors">
-              <div className="space-y-2">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-bold text-xs text-[#171C38] font-sans">{trend.name}</h4>
-                  <span className="text-[8px] font-extrabold bg-[#FF6B1A]/10 text-[#FF6B1A] border border-[#FF6B1A]/20 px-2 py-0.5 rounded-full">
-                    {trend.viralScore}% Viral
-                  </span>
-                </div>
-                <p className="text-[10px] text-[#6F7178] leading-relaxed font-semibold line-clamp-3">{trend.desc}</p>
+        {trendsLoading ? (
+          // Loading skeleton — muncul hanya saat pertama kali load (biasanya <1 detik dari cache)
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-[#171C38]/5 border border-[#E8E8E8] rounded-2xl p-4 h-[210px] animate-pulse">
+                <div className="h-3 bg-[#171C38]/10 rounded w-3/4 mb-2" />
+                <div className="h-2 bg-[#171C38]/10 rounded w-full mb-1" />
+                <div className="h-2 bg-[#171C38]/10 rounded w-5/6" />
               </div>
+            ))}
+          </div>
+        ) : trends.length === 0 ? (
+          // Fallback UI jika network error total (server down, bukan fallback Gemini)
+          <div className="flex items-center justify-center gap-2 text-[#6F7178] text-xs py-8">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Tidak dapat memuat data tren. Coba refresh halaman.</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            {trends.map((trend, idx) => (
+              <div key={idx} className="bg-[#171C38]/5 border border-[#E8E8E8] rounded-2xl p-4 flex flex-col justify-between h-[210px] text-left hover:border-slate-300 transition-colors">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-bold text-xs text-[#171C38] font-sans">{trend.name}</h4>
+                    <span className="text-[8px] font-extrabold bg-[#FF6B1A]/10 text-[#FF6B1A] border border-[#FF6B1A]/20 px-2 py-0.5 rounded-full">
+                      {trend.viral_score}% Viral
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-[#6F7178] leading-relaxed font-semibold line-clamp-3">{trend.desc}</p>
+                </div>
 
-              <div className="space-y-3 pt-2">
-                <div className="grid grid-cols-2 gap-2 text-[8px] font-bold text-[#6F7178] border-t border-[#E8E8E8] pt-2">
-                  <div>
-                    <span>Tenor Tren:</span>
-                    <span className="block text-[#171C38] mt-0.5">{trend.longevity}</span>
+                <div className="space-y-3 pt-2">
+                  <div className="grid grid-cols-2 gap-2 text-[8px] font-bold text-[#6F7178] border-t border-[#E8E8E8] pt-2">
+                    <div>
+                      <span>Tenor Tren:</span>
+                      <span className="block text-[#171C38] mt-0.5">{trend.longevity}</span>
+                    </div>
+                    <div>
+                      <span>Modal:</span>
+                      <span className="block text-[#171C38] mt-0.5">{trend.capital_label}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span>Modal:</span>
-                    <span className="block text-[#171C38] mt-0.5">{trend.capitalLabel}</span>
-                  </div>
+                  
+                  <button
+                    onClick={() => handleUsePreset(trend.preset)}
+                    className="w-full bg-white hover:bg-slate-50 border border-[#E8E8E8] hover:border-slate-300 text-[#FF6B1A] py-1.5 rounded-xl text-[9px] font-bold transition-all press-sm flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Gunakan Ide Ini</span>
+                  </button>
                 </div>
-                
-                <button
-                  onClick={() => handleUsePreset(trend.preset)}
-                  className="w-full bg-white hover:bg-slate-50 border border-[#E8E8E8] hover:border-slate-300 text-[#FF6B1A] py-1.5 rounded-xl text-[9px] font-bold transition-all press-sm flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Gunakan Ide Ini</span>
-                </button>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

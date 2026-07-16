@@ -223,7 +223,7 @@ export default function SertifikasiEkspor() {
           <div className="glass-card rounded-[20px] p-6 space-y-5 shadow-lg border border-[#E8E8E8]">
             <h3 className="font-bold text-sm text-[#171C38] uppercase tracking-wider border-b border-[#E8E8E8] pb-3 flex items-center gap-2">
               <Globe className="w-5 h-5 text-[#FF6B1A]" />
-              <span>Kuis Kesiapan Ekspor AI</span>
+              <span>Kuis Kesiapan Ekspor</span>
             </h3>
 
             <div className="space-y-5">

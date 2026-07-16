@@ -18,6 +18,13 @@ class ValidateRequest(BaseModel):
     lokasi: Optional[str] = Field("Seluruh Indonesia", max_length=100)
 
 
+class CopywriterRequest(BaseModel):
+    product_name: str = Field(..., max_length=100)
+    product_desc: str = Field(..., max_length=1000)
+    target_audience: str = Field(..., max_length=50)
+    tone: str = Field(..., max_length=50)
+
+
 # ---------------------------------------------------------------------------
 # Auth Schemas
 # ---------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, MessageCircle, Send, Video, Share2, Clipboard, Check, HelpCircle, Phone, MapPin, QrCode } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import { fetchApi } from '../services/apiClient';
 
 export default function AICopywriter() {
   const [activeTab, setActiveTab] = useState('writer'); // 'writer' or 'card'
@@ -24,7 +25,7 @@ export default function AICopywriter() {
   const [cardTheme, setCardTheme] = useState('classic'); // 'classic', 'orange', 'emerald', 'gold'
   const [cardFlipped, setCardFlipped] = useState(false);
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!productName.trim() || !productDesc.trim()) {
       toast.error('Mohon isi nama dan deskripsi produk');
       return;
@@ -33,32 +34,45 @@ export default function AICopywriter() {
     setLoading(true);
     setGeneratedResults(null);
 
-    setTimeout(() => {
+    try {
+      const response = await fetchApi('/api/copywriter', {
+        method: 'POST',
+        body: JSON.stringify({
+          product_name: productName,
+          product_desc: productDesc,
+          target_audience: targetAudience,
+          tone: tone,
+        }),
+      });
+
       const results = [
         {
           platform: 'Instagram / Facebook',
           icon: Send,
           color: 'text-pink-500 bg-pink-50 border-pink-100',
-          copy: `🔥 BARU! Mau cobain ${productName} yang rasanya bikin ketagihan? 🔥\n\nBuat kamu para ${targetAudience}, ini dia solusi kuliner paling pas! ${productDesc}.\n\nDibuat dengan bahan premium berkualitas dan bumbu rahasia yang melimpah. Yuk langsung serbu sebelum kehabisan! 🤤👇\n\n📌 Order sekarang klik link di bio kami!\n#${productName.replace(/\s+/g, '')} #UMKMIndonesia #KulinerLokal #JajananEnak #PerintisUMKM`,
+          copy: response.instagram_caption,
         },
         {
           platform: 'WhatsApp Broadcast',
           icon: MessageCircle,
           color: 'text-emerald-500 bg-emerald-50 border-emerald-100',
-          copy: `*Hallo Kak! Ada kabar gembira nih..* 😊🙌\n\nSekarang telah hadir *${productName}* khusus untuk memenuhi selera Kakak! \n\n_${productDesc}_\n\nCocok banget buat nemenin waktu santai Kakak bersama keluarga atau teman-teman.\n\n*PROMO TERBATAS HARI INI!*\nSetiap pembelian hari ini dapatkan potongan khusus. \n\nYuk, klik link di bawah untuk pesan langsung via WA:\nwa.me/628123456789 (Tanya-tanya dulu juga boleh ya Kak! 💬)`,
+          copy: response.whatsapp_message,
         },
         {
           platform: 'TikTok / Reels Video Hook & Script',
           icon: Video,
           color: 'text-indigo-500 bg-indigo-50 border-indigo-100',
-          copy: `[Visual: Video zoom-in detail tekstur produk yang menggoda]\n🎤 *HOOK (3 Detik Pertama):* "Beneran deh, sekali coba ${productName} ini, kalian dijamin bakal lupa sama diet!"\n\n🎤 *BODY SCRIPT:* "Kenapa? Karena ${productDesc}! Rasanya gurih banget, teksturnya pas, dan ramah banget di kantong ${targetAudience}."\n\n🎤 *CALL TO ACTION:* "Buruan klik keranjang kuning di bawah sekarang sebelum kehabisan stok hari ini!"`,
+          copy: response.tiktok_script,
         }
       ];
 
       setGeneratedResults(results);
-      setLoading(false);
       toast.success('Konten promosi berhasil dibuat oleh AI');
-    }, 1500);
+    } catch (err) {
+      toast.error('Gagal membuat konten promosi. Silakan coba lagi.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCopy = (text, idx) => {

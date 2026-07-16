@@ -4,11 +4,13 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies.auth import get_current_user_optional
 from ..models.user import User
-from ..schemas.schemas import CalculateRequest, ValidateRequest
+from ..schemas.schemas import CalculateRequest, ValidateRequest, CopywriterRequest
 from ..services import activity_service
 from ..services.commodity_service import get_all_commodities
 from ..services.financial_service import calculate_hpp, calculate_margin, calculate_bep, calculate_roi
 from ..services.validator_service import validate_business_idea
+from ..services.trend_service import get_viral_trends
+from ..services.copywriter_service import generate_copy
 
 router = APIRouter()
 
@@ -53,3 +55,23 @@ def validate(req: ValidateRequest, db: Session = Depends(get_db), current_user: 
             f"Validasi ide '{req.nama_usaha}' selesai — skor {skor}"
         )
     return result
+
+
+@router.get("/trends")
+def trends():
+    """GET /api/trends — PUBLIC.
+
+    Mengembalikan daftar tren bisnis viral dari cache Gemini (refresh 24 jam).
+    Tidak pernah error — fallback ke data hardcoded jika Gemini tidak tersedia.
+    """
+    return get_viral_trends()
+
+
+@router.post("/copywriter")
+def copywriter(req: CopywriterRequest):
+    """POST /api/copywriter — PUBLIC.
+    
+    Generates promotional copy using Gemini AI.
+    Falls back to a string-interpolation template if Gemini fails.
+    """
+    return generate_copy(req)
