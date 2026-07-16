@@ -63,6 +63,25 @@ class ChangePasswordRequest(BaseModel):
         return v
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
+
+    @field_validator('new_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Password minimal 8 karakter dan harus mengandung kombinasi huruf serta angka')
+        if not re.search(r'[A-Za-z]', v) or not re.search(r'\d', v):
+            raise ValueError('Password minimal 8 karakter dan harus mengandung kombinasi huruf serta angka')
+        return v
+
+
 class UserResponse(BaseModel):
     id: int
     email: str

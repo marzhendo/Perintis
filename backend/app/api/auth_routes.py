@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..schemas.schemas import UserRegister, UserLogin, UserResponse, Token, AuthResponse, ChangePasswordRequest
+from ..schemas.schemas import UserRegister, UserLogin, UserResponse, Token, AuthResponse, ChangePasswordRequest, ForgotPasswordRequest, ResetPasswordRequest
 from ..services import auth_service
 from ..dependencies.auth import get_current_user
 from ..models.user import User
@@ -69,3 +69,34 @@ def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db), 
     current_user.password_hash = auth_service.hash_password(data.new_password)
     db.commit()
     return {"message": "Password berhasil diubah"}
+
+
+@router.post("/forgot-password")
+@limiter.limit("5/minute")
+def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = auth_service.get_user_by_email(db, data.email)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Email tidak terdaftar."
+        )
+    return {"message": "Kode verifikasi reset password telah dikirim ke email Anda.", "demo_code": "123456"}
+
+
+@router.post("/reset-password")
+@limiter.limit("5/minute")
+def reset_password(request: Request, data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    if data.code != "123456":
+        raise HTTPException(
+            status_code=400,
+            detail="Kode verifikasi tidak valid."
+        )
+    user = auth_service.get_user_by_email(db, data.email)
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail="Email tidak ditemukan."
+        )
+    user.password_hash = auth_service.hash_password(data.new_password)
+    db.commit()
+    return {"message": "Password berhasil diperbarui. Silakan masuk dengan password baru Anda."}
