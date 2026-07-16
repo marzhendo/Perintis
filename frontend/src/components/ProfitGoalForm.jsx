@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Target, TrendingUp, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Target, TrendingUp, Sparkles, AlertTriangle, CheckCircle2, Award } from 'lucide-react';
 
 export default function ProfitGoalForm() {
   const [targetProfit, setTargetProfit] = useState('5000000');
   const [price, setPrice] = useState('15000');
   const [cost, setCost] = useState('8000');
   const [fixedCost, setFixedCost] = useState('2000000');
+  const [showResults, setShowResults] = useState(false);
 
   const formatRupiah = (num) => {
     return new Intl.NumberFormat('id-ID', {
@@ -19,6 +20,14 @@ export default function ProfitGoalForm() {
   const parseNumber = (val) => {
     const num = parseFloat(val);
     return isNaN(num) ? 0 : num;
+  };
+
+  const handleParamChange = (setter, val) => {
+    if (val.length > 12) {
+      val = val.slice(0, 12);
+    }
+    setter(val);
+    setShowResults(false);
   };
 
   const target = parseNumber(targetProfit);
@@ -52,8 +61,8 @@ export default function ProfitGoalForm() {
                 <input
                   type="number"
                   value={targetProfit}
-                  onChange={(e) => setTargetProfit(e.target.value)}
-                  className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] rounded-xl py-3 pl-10 pr-4 text-sm font-semibold text-[#171C38]"
+                  onChange={(e) => handleParamChange(setTargetProfit, e.target.value)}
+                  className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-3 pl-10 pr-4 text-sm font-semibold text-[#171C38] focus-ring transition-all"
                 />
               </div>
             </div>
@@ -67,8 +76,8 @@ export default function ProfitGoalForm() {
                   <input
                     type="number"
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="w-full bg-white border border-[#E8E8E8] rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38]"
+                    onChange={(e) => handleParamChange(setPrice, e.target.value)}
+                    className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38] focus-ring transition-all"
                   />
                 </div>
               </div>
@@ -79,8 +88,8 @@ export default function ProfitGoalForm() {
                   <input
                     type="number"
                     value={cost}
-                    onChange={(e) => setCost(e.target.value)}
-                    className="w-full bg-white border border-[#E8E8E8] rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38]"
+                    onChange={(e) => handleParamChange(setCost, e.target.value)}
+                    className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38] focus-ring transition-all"
                   />
                 </div>
               </div>
@@ -94,19 +103,36 @@ export default function ProfitGoalForm() {
                 <input
                   type="number"
                   value={fixedCost}
-                  onChange={(e) => setFixedCost(e.target.value)}
-                  className="w-full bg-white border border-[#E8E8E8] rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38]"
+                  onChange={(e) => handleParamChange(setFixedCost, e.target.value)}
+                  className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38] focus-ring transition-all"
                 />
               </div>
             </div>
+
+            {/* Calculate Button */}
+            <button
+              onClick={() => setShowResults(true)}
+              className="w-full bg-[#FF6B1A] hover:bg-[#FF8A3D] text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 press shadow-md hover:shadow-lg mt-4"
+            >
+              <Target className="w-4 h-4" />
+              <span>Hitung Target Penjualan</span>
+            </button>
 
           </div>
         </div>
 
         {/* Right Output Analysis */}
         <div className="lg:col-span-5 space-y-6 w-full">
-          {marginPerUnit <= 0 ? (
-            <div className="glass-card rounded-[20px] p-6 border-l-4 border-l-rose-500 shadow-lg space-y-3">
+          {!showResults ? (
+            <div className="glass-card rounded-[20px] p-8 text-center border border-[#E8E8E8] flex flex-col items-center justify-center min-h-[300px] text-[#6F7178] space-y-3">
+              <Award className="w-12 h-12 stroke-[1.5] text-[#FF6B1A] drop-shadow-[0_0_8px_rgba(255,107,26,0.1)]" />
+              <h4 className="font-bold text-sm text-[#171C38]">Hasil Analisis Target</h4>
+              <p className="text-xs text-[#6F7178] font-semibold max-w-xs leading-relaxed">
+                Silakan isi target laba dan pengeluaran usaha Anda pada formulir di sebelah kiri dan klik tombol <b>Hitung Target Penjualan</b> untuk memproses hasil simulasi target.
+              </p>
+            </div>
+          ) : marginPerUnit <= 0 ? (
+            <div className="glass-card rounded-[20px] p-6 border-l-4 border-l-rose-500 shadow-lg space-y-3 animate-slide-in">
               <div className="flex gap-2 items-center text-rose-500 font-bold">
                 <AlertTriangle className="w-5 h-5" />
                 <h4 className="text-xs uppercase tracking-wider">Kesalahan Margin</h4>
@@ -114,7 +140,7 @@ export default function ProfitGoalForm() {
               <p className="text-xs text-[#6F7178] leading-relaxed font-semibold">Harga jual target ({formatRupiah(p)}) harus lebih besar dari biaya modal bahan baku ({formatRupiah(c)}) agar bisa menghitung target penjualan. Naikkan harga jual produk Anda.</p>
             </div>
           ) : (
-            <div className="glass-card rounded-[20px] p-6 space-y-5 shadow-lg border-l-4 border-l-[#FF6B1A] text-left">
+            <div className="glass-card rounded-[20px] p-6 space-y-5 shadow-lg border-l-4 border-l-[#FF6B1A] text-left animate-slide-in">
               <div className="flex justify-between items-center border-b border-[#E8E8E8] pb-3">
                 <h4 className="font-bold text-xs text-[#171C38] uppercase tracking-wider font-sans">Simulasi Keberhasilan Target</h4>
                 <span className="text-[10px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/5 border border-[#FF6B1A]/20 px-2 py-0.5 rounded-full">AI Calculated</span>
@@ -142,7 +168,7 @@ export default function ProfitGoalForm() {
                   <div className="space-y-1">
                     <h5 className="text-[10px] font-bold text-[#171C38]">Saran Operasional & Pemasaran</h5>
                     <p className="text-[9px] text-[#6F7178] leading-relaxed font-semibold">
-                      Untuk meraih profit bersih {formatRupiah(target)}/bln, Anda harus menjual minimal {unitsPerDay} porsi/hari. Alokasikan sekitar {formatRupiah(monthlyRevenue * 0.05)} (5% dari omzet) untuk iklan lokal per bulan demi mendorong pencapaian transaksi harian.
+                      Untuk meraih profit bersih {formatRupiah(target)}/bln, Anda harus menjual minimal {unitsPerDay} porsi/hari. Alokasikan sekitar {formatRupiah(monthlyRevenue * 0.05)} (5% dari omzet) untuk iklan lokal per bureau demi mendorong pencapaian transaksi harian.
                     </p>
                   </div>
                 </div>

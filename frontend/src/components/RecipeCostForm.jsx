@@ -17,16 +17,19 @@ export default function RecipeCostForm() {
     { id: 2, name: 'Cabai Rawit', qty: 0.2, unit: 'kg', costPerUnit: 45000 },
     { id: 3, name: 'Bawang Merah', qty: 0.1, unit: 'kg', costPerUnit: 35000 }
   ]);
+  const [showResults, setShowResults] = useState(false);
 
   const handleAddIngredient = () => {
     setIngredients([
       ...ingredients,
       { id: Date.now(), name: 'Bahan Baru', qty: 1, unit: 'kg', costPerUnit: 10000 }
     ]);
+    setShowResults(false);
   };
 
   const handleRemoveIngredient = (id) => {
     setIngredients(ingredients.filter(ing => ing.id !== id));
+    setShowResults(false);
   };
 
   const handleUpdateIngredient = (id, key, val) => {
@@ -34,8 +37,15 @@ export default function RecipeCostForm() {
       if (ing.id === id) {
         let updatedVal = val;
         if (key === 'qty' || key === 'costPerUnit') {
-          updatedVal = parseFloat(val) || 0;
+          // Limit length to 12
+          const valStr = String(val);
+          if (valStr.length > 12) {
+            updatedVal = parseFloat(valStr.slice(0, 12)) || 0;
+          } else {
+            updatedVal = parseFloat(val) || 0;
+          }
         }
+        setShowResults(false);
         return { ...ing, [key]: updatedVal };
       }
       return ing;
@@ -47,11 +57,24 @@ export default function RecipeCostForm() {
     if (selected) {
       setIngredients(ingredients.map(ing => {
         if (ing.id === id) {
+          setShowResults(false);
           return { ...ing, name: selected.name, costPerUnit: selected.price, unit: selected.unit };
         }
         return ing;
       }));
     }
+  };
+
+  const handlePortionsChange = (val) => {
+    if (val.length > 12) val = val.slice(0, 12);
+    setPortions(val);
+    setShowResults(false);
+  };
+
+  const handleTargetPriceChange = (val) => {
+    if (val.length > 12) val = val.slice(0, 12);
+    setTargetPrice(val);
+    setShowResults(false);
   };
 
   const formatRupiah = (num) => {
@@ -173,7 +196,7 @@ export default function RecipeCostForm() {
                 <input
                   type="number"
                   value={portions}
-                  onChange={(e) => setPortions(e.target.value)}
+                  onChange={(e) => handlePortionsChange(e.target.value)}
                   className="w-full bg-white border border-[#E8E8E8] rounded-xl py-2 px-3 text-xs font-semibold text-[#171C38]"
                   placeholder="Contoh: 10"
                 />
@@ -186,58 +209,78 @@ export default function RecipeCostForm() {
                   <input
                     type="number"
                     value={targetPrice}
-                    onChange={(e) => setTargetPrice(e.target.value)}
+                    onChange={(e) => handleTargetPriceChange(e.target.value)}
                     className="w-full bg-white border border-[#E8E8E8] rounded-xl py-2 pl-9 pr-3 text-xs font-semibold text-[#171C38]"
                     placeholder="Contoh: 20000"
                   />
                 </div>
               </div>
             </div>
+
+            {/* Calculate Button */}
+            <button
+              onClick={() => setShowResults(true)}
+              className="w-full bg-[#FF6B1A] hover:bg-[#FF8A3D] text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 press shadow-md hover:shadow-lg mt-4"
+            >
+              <Calculator className="w-4 h-4" />
+              <span>Hitung HPP Resep & Keuntungan</span>
+            </button>
+
           </div>
         </div>
 
         {/* Right Side: Analysis Output */}
         <div className="lg:col-span-4 space-y-6 w-full">
-          <div className="glass-card rounded-[20px] p-6 space-y-5 shadow-lg border border-[#E8E8E8] w-full text-left">
-            <h4 className="font-bold text-xs text-[#171C38] uppercase tracking-wider border-b border-[#E8E8E8] pb-3 flex items-center gap-1.5">
-              <Calculator className="w-4.5 h-4.5 text-[#FF6B1A]" />
-              <span>Analisis Biaya Porsi</span>
-            </h4>
-
-            <div className="space-y-3.5">
-              <div className="flex justify-between items-center text-xs font-semibold">
-                <span className="text-[#6F7178]">Total Modal Resep</span>
-                <span className="text-[#171C38]">{formatRupiah(totalRecipeCost)}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-semibold border-t border-[#E8E8E8] pt-2.5">
-                <span className="text-[#6F7178]">HPP Per Portion</span>
-                <span className="text-xl font-extrabold text-[#FF6B1A] text-glow-orange">{formatRupiah(hppPerPortion)}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-semibold border-t border-[#E8E8E8] pt-2.5">
-                <span className="text-[#6F7178]">Harga Jual Target</span>
-                <span className="text-[#171C38]">{formatRupiah(pricePerPortion)}</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-semibold border-t border-[#E8E8E8] pt-2.5">
-                <span className="text-[#6F7178]">Margin Keuntungan</span>
-                <span className={`font-bold ${profitMargin >= 30 ? 'text-emerald-600' : profitMargin >= 10 ? 'text-amber-500' : 'text-rose-500'}`}>
-                  {profitMargin}%
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-[#171C38]/5 border border-[#E8E8E8] rounded-xl p-3 flex gap-2.5 items-start">
-              <Info className="w-4 h-4 text-[#FF6B1A] flex-shrink-0 mt-0.5" />
-              <p className="text-[10px] text-[#6F7178] font-bold leading-relaxed">
-                {profitMargin >= 30 
-                  ? `Sangat menguntungkan! Anda mendapatkan laba bersih sebesar ${formatRupiah(netProfit)} dari total resep ini.`
-                  : profitMargin >= 10
-                    ? `Margin laba wajar. Usahakan mencari pemasok bahan mentah yang lebih terjangkau untuk meningkatkan profit.`
-                    : `Saran AI: Margin di bawah 10% terlalu riskan untuk bisnis kuliner. Naikkan harga jual target atau kurangi takaran bahan baku.`
-                }
+          {!showResults ? (
+            <div className="glass-card rounded-[20px] p-8 text-center border border-[#E8E8E8] flex flex-col items-center justify-center min-h-[300px] text-[#6F7178] space-y-3">
+              <Calculator className="w-12 h-12 stroke-[1.5] text-[#FF6B1A] drop-shadow-[0_0_8px_rgba(255,107,26,0.1)]" />
+              <h4 className="font-bold text-sm text-[#171C38]">Analisis Biaya Porsi</h4>
+              <p className="text-xs text-[#6F7178] font-semibold max-w-xs leading-relaxed">
+                Silakan isi bahan baku dan porsi resep Anda pada editor di sebelah kiri dan klik tombol <b>Hitung HPP Resep & Keuntungan</b> untuk memproses hasil kalkulasi.
               </p>
             </div>
-          </div>
-        </div>
+          ) : (
+            <div className="glass-card rounded-[20px] p-6 space-y-5 shadow-lg border border-[#E8E8E8] w-full text-left animate-slide-in">
+              <h4 className="font-bold text-xs text-[#171C38] uppercase tracking-wider border-b border-[#E8E8E8] pb-3 flex items-center gap-1.5">
+                <Calculator className="w-4.5 h-4.5 text-[#FF6B1A]" />
+                <span>Analisis Biaya Porsi</span>
+              </h4>
+
+              <div className="space-y-3.5">
+                <div className="flex justify-between items-center text-xs font-semibold">
+                  <span className="text-[#6F7178]">Total Modal Resep</span>
+                  <span className="text-[#171C38]">{formatRupiah(totalRecipeCost)}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-semibold border-t border-[#E8E8E8] pt-2.5">
+                  <span className="text-[#6F7178]">HPP Per Portion</span>
+                  <span className="text-xl font-extrabold text-[#FF6B1A] text-glow-orange">{formatRupiah(hppPerPortion)}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-semibold border-t border-[#E8E8E8] pt-2.5">
+                  <span className="text-[#6F7178]">Harga Jual Target</span>
+                  <span className="text-[#171C38]">{formatRupiah(pricePerPortion)}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs font-semibold border-t border-[#E8E8E8] pt-2.5">
+                  <span className="text-[#6F7178]">Margin Keuntungan</span>
+                  <span className={`font-bold ${profitMargin >= 30 ? 'text-emerald-600' : profitMargin >= 10 ? 'text-amber-500' : 'text-rose-500'}`}>
+                    {profitMargin}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#171C38]/5 border border-[#E8E8E8] rounded-xl p-3 flex gap-2.5 items-start">
+                <Info className="w-4 h-4 text-[#FF6B1A] flex-shrink-0 mt-0.5" />
+                <p className="text-[10px] text-[#6F7178] font-bold leading-relaxed">
+                  {profitMargin >= 30 
+                    ? `Sangat menguntungkan! Anda mendapatkan laba bersih sebesar ${formatRupiah(netProfit)} dari total resep ini.`
+                    : profitMargin >= 10
+                      ? `Margin laba wajar. Usahakan mencari pemasok bahan mentah yang lebih terjangkau untuk meningkatkan profit.`
+                      : `Saran AI: Margin di bawah 10% terlalu riskan untuk bisnis kuliner. Naikkan harga jual target atau kurangi takaran bahan baku.`
+                  }
+                </p>
+              </div>
+            </div>
+          )}
+        </div>div>
 
       </div>
     </div>

@@ -11,7 +11,11 @@ function RupiahInput({ id, label, value, onChange }) {
           id={id}
           type="number"
           value={value}
-          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+          onChange={(e) => {
+            let val = e.target.value;
+            if (val.length > 12) val = val.slice(0, 12);
+            onChange(parseFloat(val) || 0);
+          }}
           className="w-full bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-3 pl-12 pr-4 text-sm font-semibold text-[#171C38] transition-all focus-ring"
         />
       </div>

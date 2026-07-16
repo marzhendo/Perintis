@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Percent, ShieldAlert, CheckCircle2, AlertTriangle, ArrowRight, HelpCircle } from 'lucide-react';
+import { Percent, ShieldAlert, CheckCircle2, AlertTriangle, ArrowRight, HelpCircle, Award } from 'lucide-react';
 
 export default function PromoCalcForm() {
   const [priceA, setPriceA] = useState('15000');
@@ -7,6 +7,7 @@ export default function PromoCalcForm() {
   const [priceB, setPriceB] = useState('12000');
   const [costB, setCostB] = useState('6000');
   const [bundlePrice, setBundlePrice] = useState('22000');
+  const [showResults, setShowResults] = useState(false);
 
   const formatRupiah = (num) => {
     return new Intl.NumberFormat('id-ID', {
@@ -20,6 +21,14 @@ export default function PromoCalcForm() {
   const parseNumber = (val) => {
     const num = parseFloat(val);
     return isNaN(num) ? 0 : num;
+  };
+
+  const handleParamChange = (setter, val) => {
+    if (val.length > 12) {
+      val = val.slice(0, 12);
+    }
+    setter(val);
+    setShowResults(false);
   };
 
   const pA = parseNumber(priceA);
@@ -78,7 +87,7 @@ export default function PromoCalcForm() {
                   <input
                     type="number"
                     value={priceA}
-                    onChange={(e) => setPriceA(e.target.value)}
+                    onChange={(e) => handleParamChange(setPriceA, e.target.value)}
                     className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38] transition-all focus-ring"
                   />
                 </div>
@@ -90,7 +99,7 @@ export default function PromoCalcForm() {
                   <input
                     type="number"
                     value={costA}
-                    onChange={(e) => setCostA(e.target.value)}
+                    onChange={(e) => handleParamChange(setCostA, e.target.value)}
                     className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38] transition-all focus-ring"
                   />
                 </div>
@@ -106,7 +115,7 @@ export default function PromoCalcForm() {
                   <input
                     type="number"
                     value={priceB}
-                    onChange={(e) => setPriceB(e.target.value)}
+                    onChange={(e) => handleParamChange(setPriceB, e.target.value)}
                     className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38] transition-all focus-ring"
                   />
                 </div>
@@ -118,7 +127,7 @@ export default function PromoCalcForm() {
                   <input
                     type="number"
                     value={costB}
-                    onChange={(e) => setCostB(e.target.value)}
+                    onChange={(e) => handleParamChange(setCostB, e.target.value)}
                     className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38] transition-all focus-ring"
                   />
                 </div>
@@ -136,53 +145,72 @@ export default function PromoCalcForm() {
                 <input
                   type="number"
                   value={bundlePrice}
-                  onChange={(e) => setBundlePrice(e.target.value)}
+                  onChange={(e) => handleParamChange(setBundlePrice, e.target.value)}
                   className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-3 pl-10 pr-4 text-sm font-semibold text-[#171C38] transition-all focus-ring"
                 />
               </div>
             </div>
+
+            {/* Calculate Button */}
+            <button
+              onClick={() => setShowResults(true)}
+              className="w-full bg-[#FF6B1A] hover:bg-[#FF8A3D] text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 press shadow-md hover:shadow-lg mt-4"
+            >
+              <Percent className="w-4 h-4" />
+              <span>Hitung Analisis Promo</span>
+            </button>
 
           </div>
         </div>
 
         {/* Right Side: Simulation Results & Alerts */}
         <div className="lg:col-span-5 space-y-6 w-full">
-          <div className={`glass-card rounded-[20px] p-6 space-y-5 shadow-lg border-l-4 ${statusColor}`}>
-            <div className="flex justify-between items-center">
-              <h4 className="font-bold text-xs text-[#171C38] uppercase tracking-wider">Hasil Analisis Promo</h4>
-              <span className={`text-[10px] font-bold border px-2.5 py-0.5 rounded-full ${badgeColor}`}>
-                {statusTitle}
-              </span>
+          {!showResults ? (
+            <div className="glass-card rounded-[20px] p-8 text-center border border-[#E8E8E8] flex flex-col items-center justify-center min-h-[300px] text-[#6F7178] space-y-3">
+              <Award className="w-12 h-12 stroke-[1.5] text-[#FF6B1A] drop-shadow-[0_0_8px_rgba(255,107,26,0.1)]" />
+              <h4 className="font-bold text-sm text-[#171C38]">Hasil Analisis Promo</h4>
+              <p className="text-xs text-[#6F7178] font-semibold max-w-xs leading-relaxed">
+                Silakan isi data harga jual dan modal produk Anda pada formulir di sebelah kiri dan klik tombol <b>Hitung Analisis Promo</b> untuk melihat hasil analisis profitabilitas.
+              </p>
             </div>
+          ) : (
+            <div className={`glass-card rounded-[20px] p-6 space-y-5 shadow-lg border-l-4 ${statusColor} animate-slide-in`}>
+              <div className="flex justify-between items-center">
+                <h4 className="font-bold text-xs text-[#171C38] uppercase tracking-wider">Hasil Analisis Promo</h4>
+                <span className={`text-[10px] font-bold border px-2.5 py-0.5 rounded-full ${badgeColor}`}>
+                  {statusTitle}
+                </span>
+              </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-0.5">
-                <span className="text-[9px] font-bold text-[#6F7178] uppercase">Total Modal (HPP)</span>
-                <p className="text-lg font-bold text-[#171C38]">{formatRupiah(totalCost)}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-0.5">
+                  <span className="text-[9px] font-bold text-[#6F7178] uppercase">Total Modal (HPP)</span>
+                  <p className="text-lg font-bold text-[#171C38]">{formatRupiah(totalCost)}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-[9px] font-bold text-[#6F7178] uppercase">Total Jual Normal</span>
+                  <p className="text-lg font-bold text-[#171C38]">{formatRupiah(normalTotalJual)}</p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-[9px] font-bold text-[#6F7178] uppercase">Besar Diskon</span>
+                  <p className="text-lg font-bold text-[#FF6B1A]">
+                    {formatRupiah(discountNominal)} ({discountPercent}%)
+                  </p>
+                </div>
+                <div className="space-y-0.5">
+                  <span className="text-[9px] font-bold text-[#6F7178] uppercase">Margin Keuntungan</span>
+                  <p className={`text-lg font-bold ${profitNominal >= 0 ? 'text-[#171C38]' : 'text-rose-500'}`}>
+                    {profitMargin}%
+                  </p>
+                </div>
               </div>
-              <div className="space-y-0.5">
-                <span className="text-[9px] font-bold text-[#6F7178] uppercase">Total Jual Normal</span>
-                <p className="text-lg font-bold text-[#171C38]">{formatRupiah(normalTotalJual)}</p>
-              </div>
-              <div className="space-y-0.5">
-                <span className="text-[9px] font-bold text-[#6F7178] uppercase">Besar Diskon</span>
-                <p className="text-lg font-bold text-[#FF6B1A]">
-                  {formatRupiah(discountNominal)} ({discountPercent}%)
-                </p>
-              </div>
-              <div className="space-y-0.5">
-                <span className="text-[9px] font-bold text-[#6F7178] uppercase">Margin Keuntungan</span>
-                <p className={`text-lg font-bold ${profitNominal >= 0 ? 'text-[#171C38]' : 'text-rose-500'}`}>
-                  {profitMargin}%
-                </p>
-              </div>
-            </div>
 
-            <div className="bg-[#171C38]/5 rounded-xl p-3 flex gap-2.5 items-start">
-              <AlertIconComponent className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: bP < totalCost ? '#f43f5e' : profitMargin < 15 ? '#fbbf24' : '#10b981' }} />
-              <p className="text-[11px] text-[#6F7178] font-semibold leading-relaxed">{statusDesc}</p>
+              <div className="bg-[#171C38]/5 rounded-xl p-3 flex gap-2.5 items-start">
+                <AlertIconComponent className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: bP < totalCost ? '#f43f5e' : profitMargin < 15 ? '#fbbf24' : '#10b981' }} />
+                <p className="text-[11px] text-[#6F7178] font-semibold leading-relaxed">{statusDesc}</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
