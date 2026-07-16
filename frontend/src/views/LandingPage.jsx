@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Brain, Calculator, Layers, MessageSquare, Sparkles, CheckCircle2, ShieldCheck, ChevronRight, HelpCircle, MessageCircle, Play, X, User } from 'lucide-react';
+import { ArrowRight, Brain, Calculator, Layers, MessageSquare, Sparkles, CheckCircle2, ShieldCheck, ChevronRight, HelpCircle, MessageCircle, Play, X, User, TrendingUp } from 'lucide-react';
 
 const MOCK_NOTIFS = [
   { name: 'Fatir G.', action: 'baru saja memvalidasi ide', detail: 'Kedai Kopi' },
@@ -13,17 +13,30 @@ export default function LandingPage({ setActiveTab }) {
   const [notifIndex, setNotifIndex] = useState(0);
   const [showNotif, setShowNotif] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(() => {
+    return sessionStorage.getItem('perintis_notif_dismissed') === 'true';
+  });
 
   useEffect(() => {
+    if (isDismissed) return;
+
     const interval = setInterval(() => {
       setShowNotif(false);
       setTimeout(() => {
-        setNotifIndex((prev) => (prev + 1) % MOCK_NOTIFS.length);
-        setShowNotif(true);
+        if (!isDismissed) {
+          setNotifIndex((prev) => (prev + 1) % MOCK_NOTIFS.length);
+          setShowNotif(true);
+        }
       }, 500); // fade out transition delay
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isDismissed]);
+
+  const handleCloseNotif = () => {
+    setShowNotif(false);
+    setIsDismissed(true);
+    sessionStorage.setItem('perintis_notif_dismissed', 'true');
+  };
 
   const currentNotif = MOCK_NOTIFS[notifIndex];
 
@@ -73,52 +86,137 @@ export default function LandingPage({ setActiveTab }) {
           </button>
         </div>
 
-        {/* Illustration Sketch / Dashboard Preview Mockup */}
-        <div className="mt-20 relative max-w-3xl mx-auto bg-[#171C38]/5 rounded-3xl p-4 border border-[#E8E8E8] shadow-2xl shadow-orange-500/5 group hover:border-[#FF6B1A]/20 transition-all duration-500">
-          <div className="absolute -left-10 -top-10 w-40 h-40 bg-[#FF6B1A]/5 rounded-full blur-3xl -z-10" />
-          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[#F8ECD2]/5 rounded-full blur-3xl -z-10" />
-          <div className="w-full h-64 md:h-96 rounded-2xl bg-[#171C38] border border-[#E8E8E8] overflow-hidden flex flex-col relative">
+        {/* Illustration Sketch / Dashboard Preview Mockup         {/* Illustration Sketch / Dashboard Preview Mockup */}
+        <div className="mt-20 relative max-w-4xl mx-auto bg-white/40 rounded-3xl p-4 border border-[#E8E8E8] shadow-xl shadow-orange-500/5">
+          <div className="absolute -left-10 -top-10 w-40 h-40 bg-[#FF6B1A]/5 rounded-full blur-3xl -z-10 animate-float" />
+          <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[#F8ECD2]/5 rounded-full blur-3xl -z-10 animate-float delay-1000" />
+          
+          <div className="w-full h-auto rounded-2xl bg-white border border-[#E8E8E8] overflow-hidden flex flex-col relative shadow-[0_15px_40px_rgba(23,28,56,0.04)]">
             
             {/* Mock Dashboard Topbar */}
-            <div className="h-10 bg-[#171C38]/5 border-b border-[#E8E8E8] px-4 flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B1A]/40" />
-              <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B1A]/20" />
-              <div className="w-2.5 h-2.5 rounded-full bg-[#FF6B1A]/10" />
-              <div className="h-4 w-40 bg-[#171C38]/5 rounded-md ml-4 border border-[#E8E8E8]" />
+            <div className="h-10 bg-[#FAF6EE]/40 border-b border-[#E8E8E8] px-4 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F56]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#FFBD2E]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#27C93F]" />
+              </div>
+              <div className="h-5 w-52 bg-white rounded-full border border-[#E8E8E8] flex items-center justify-center text-[9px] text-[#171C38]/50 font-mono tracking-wide">
+                perintis-umkm.web.app/dashboard
+              </div>
+              <div className="w-12" />
             </div>
 
-            {/* Custom Interactive Vector Illustration */}
-            <div className="flex-1 flex items-center justify-center p-6 relative">
-              <svg className="w-full h-full max-w-md text-[#6F7178] stroke-current opacity-80" fill="none" viewBox="0 0 400 200">
-                {/* Grid */}
-                <path d="M 0,20 L 400,20 M 0,60 L 400,60 M 0,100 L 400,100 M 0,140 L 400,140" strokeWidth="0.5" strokeDasharray="3 3" />
-                <path d="M 40,0 L 40,200 M 120,0 L 120,200 M 200,0 L 200,200 M 280,0 L 280,200 M 360,0 L 360,200" strokeWidth="0.5" strokeDasharray="3 3" />
-                
-                {/* Graph lines */}
-                <path d="M 40,160 Q 120,120 200,140 T 280,70 T 360,40" stroke="#FF6B1A" strokeWidth="3" className="drop-shadow-[0_0_8px_#FF6B1A]" />
-                <path d="M 40,180 Q 120,150 200,100 T 280,90 T 360,20" stroke="#F8ECD2" strokeWidth="2" strokeDasharray="5 5" />
-                
-                {/* Node Points */}
-                <circle cx="280" cy="70" r="5" fill="#FF6B1A" className="animate-ping" />
-                <circle cx="280" cy="70" r="5" fill="#FF6B1A" />
-                <circle cx="200" cy="140" r="4" fill="#F8ECD2" />
-                <circle cx="360" cy="40" r="6" fill="#FF6B1A" />
+            {/* Main Area */}
+            <div className="flex flex-col md:flex-row min-h-[350px]">
+              
+              {/* Mock Sidebar */}
+              <div className="w-full md:w-16 bg-[#FAF6EE]/20 border-b md:border-b-0 md:border-r border-[#E8E8E8] flex md:flex-col items-center justify-around md:justify-start py-3 md:py-6 gap-4 md:gap-6 text-[#171C38]/40 px-2 md:px-0">
+                <div className="w-8 h-8 rounded-lg bg-[#FF6B1A]/10 border border-[#FF6B1A]/20 flex items-center justify-center text-[#FF6B1A]" title="Validasi AI"><Brain className="w-4 h-4" /></div>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" title="Kalkulator BEP"><Calculator className="w-4 h-4" /></div>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" title="Pantau Harga"><TrendingUp className="w-4 h-4" /></div>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" title="Forum Diskusi"><MessageSquare className="w-4 h-4" /></div>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" title="AI Copywriter"><Sparkles className="w-4 h-4" /></div>
+              </div>
 
-                {/* Annotation */}
-                <rect x="250" y="25" width="80" height="30" rx="6" fill="rgba(23, 28, 56, 0.9)" stroke="rgba(255, 107, 26, 0.3)" />
-                <text x="290" y="43" fill="#FFF" fontSize="9" fontWeight="bold" textAnchor="middle">BEP: 3 Bulan</text>
-              </svg>
+              {/* Mock Dashboard Body */}
+              <div className="flex-1 p-4 md:p-6 space-y-4 md:space-y-6 text-left bg-white">
+                
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-xs font-bold text-[#171C38] tracking-wide uppercase">Simulasi Bisnis Aktif</h3>
+                    <p className="text-[10px] text-[#6F7178] mt-0.5 font-medium">Usaha: Warung Ayam Geprek - Gianyar, Bali</p>
+                  </div>
+                  <div className="self-start sm:self-auto flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[9px] text-emerald-600 font-bold uppercase tracking-wider">AI Validated</span>
+                  </div>
+                </div>
 
-              {/* Float Widget */}
-              <div className="absolute bottom-6 right-6 bg-[#171C38]/5 border border-[#E8E8E8] backdrop-blur-md rounded-2xl p-4 text-left shadow-lg">
-                <p className="text-[10px] font-bold text-[#6F7178] uppercase tracking-wider">AI RECOMMENDATION</p>
-                <p className="text-xs font-bold text-[#FF6B1A] mt-1">Ide Bisnis Sangat Layak (Skor 87%)</p>
+                {/* Grid Metrics */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-[#FAF6EE]/40 border border-[#E8E8E8] p-3 rounded-xl">
+                    <span className="text-[8px] text-[#6F7178] uppercase font-bold tracking-wider block">Kelayakan AI</span>
+                    <div className="flex items-baseline gap-1 mt-1 flex-wrap">
+                      <span className="text-sm font-black text-[#FF6B1A]">4.8</span>
+                      <span className="text-[8px] text-emerald-600 font-bold">Sangat Layak</span>
+                    </div>
+                  </div>
+                  <div className="bg-[#FAF6EE]/40 border border-[#E8E8E8] p-3 rounded-xl">
+                    <span className="text-[8px] text-[#6F7178] uppercase font-bold tracking-wider block">Balik Modal</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-sm font-black text-[#171C38]">3.2</span>
+                      <span className="text-[8px] text-[#6F7178] font-bold">Bulan</span>
+                    </div>
+                  </div>
+                  <div className="bg-[#FAF6EE]/40 border border-[#E8E8E8] p-3 rounded-xl">
+                    <span className="text-[8px] text-[#6F7178] uppercase font-bold tracking-wider block">Margin Kotor</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-sm font-black text-[#171C38]">65%</span>
+                      <span className="text-[8px] text-emerald-600 font-bold">Optimal</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Chart & Insights Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  
+                  {/* Graph */}
+                  <div className="lg:col-span-7 bg-[#FAF6EE]/20 border border-[#E8E8E8] rounded-xl p-4 flex flex-col justify-between min-h-[160px]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] text-[#171C38] font-bold tracking-wider">Proyeksi Balik Modal (ROI)</span>
+                      <div className="flex gap-2 text-[8px] text-[#6F7178] font-bold">
+                        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#FF6B1A]" />Pendapatan</span>
+                        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#171C38]/30" />Operasional</span>
+                      </div>
+                    </div>
+                    
+                    {/* SVG Chart */}
+                    <div className="flex-1 w-full relative mt-3 flex items-center justify-center">
+                      <svg className="w-full h-full max-h-[100px] text-[#E8E8E8] stroke-current" fill="none" viewBox="0 0 300 100">
+                        <path d="M 0,20 L 300,20 M 0,50 L 300,50 M 0,80 L 300,80" strokeWidth="0.5" strokeDasharray="3 3" />
+                        <path d="M 50,0 L 50,100 M 150,0 L 150,100 M 250,0 L 250,100" strokeWidth="0.5" strokeDasharray="3 3" />
+                        
+                        <path d="M 0,90 Q 60,85 120,60 T 240,25 T 300,10" stroke="#FF6B1A" strokeWidth="2.5" className="drop-shadow-[0_0_4px_rgba(255,107,26,0.2)]" />
+                        <path d="M 0,90 Q 60,65 120,55 T 240,50 T 300,45" stroke="#171C38" strokeWidth="1.5" strokeOpacity="0.25" strokeDasharray="3 3" />
+                        
+                        <circle cx="110" cy="62" r="3.5" fill="#FF6B1A" className="animate-ping" />
+                        <circle cx="110" cy="62" r="3.5" fill="#FF6B1A" />
+                      </svg>
+                      <div className="absolute top-2 left-[85px] bg-[#171C38] border border-[#FF6B1A]/30 px-2 py-0.5 rounded text-[8px] font-bold text-white shadow-md">
+                        BEP: Bln Ke-3
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AI Recommendations */}
+                  <div className="lg:col-span-5 bg-[#FAF6EE]/20 border border-[#E8E8E8] rounded-xl p-4 flex flex-col justify-between min-h-[160px] text-left">
+                    <span className="text-[9px] text-[#FF6B1A] font-bold tracking-wider uppercase flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-glow-orange" /> Rekomendasi Pintar AI
+                    </span>
+                    <div className="flex-1 flex flex-col justify-center gap-2.5 mt-3">
+                      <div className="flex gap-2 items-start">
+                        <span className="text-[8px] bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-1 py-0.2 rounded font-extrabold flex-shrink-0">PASAR</span>
+                        <p className="text-[9px] text-[#171C38]/80 leading-normal font-medium">Permintaan kuliner pedas di area Gianyar dinilai tinggi, potensi adopsi cepat.</p>
+                      </div>
+                      <div className="flex gap-2 items-start">
+                        <span className="text-[8px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1 py-0.2 rounded font-extrabold flex-shrink-0">RISIKO</span>
+                        <p className="text-[9px] text-[#171C38]/80 leading-normal font-medium">Harga cabai rawit lokal berfluktuasi. Disarankan optimasi margin 60%.</p>
+                      </div>
+                      <div className="flex gap-2 items-start">
+                        <span className="text-[8px] bg-sky-500/10 text-sky-600 border border-sky-500/20 px-1 py-0.2 rounded font-extrabold flex-shrink-0">SARAN</span>
+                        <p className="text-[9px] text-[#171C38]/80 leading-normal font-medium">Fokus penjualan online pada jam makan siang & paket minuman dingin.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
               </div>
             </div>
 
           </div>
         </div>
-
       </section>
 
       {/* Detailed Description / Penjelasan Lengkap (User Request) */}
@@ -291,17 +389,19 @@ export default function LandingPage({ setActiveTab }) {
       </section>
 
       {/* REAL-TIME NOTIFICATION POPUP (Bottom-Left) — Inspired by dicoding.com/asah */}
-      {showNotif && currentNotif && (
-        <div className="fixed bottom-6 left-6 z-50 max-w-xs bg-[#FAF6EE]/95 backdrop-blur-md border border-[#FF6B1A]/30 rounded-2xl p-4 shadow-2xl shadow-orange-500/10 flex items-center gap-3 animate-slide-up">
-          <div className="w-8 h-8 rounded-full bg-[#FF6B1A]/10 border border-[#FF6B1A]/20 flex items-center justify-center flex-shrink-0 text-[#FF6B1A]">
-            <User className="w-4 h-4" />
-          </div>
-          <div className="text-left flex-1 min-w-0">
-            <p className="text-[11px] font-bold text-[#171C38] truncate">{currentNotif.name}</p>
-            <p className="text-[10px] text-[#6F7178] font-semibold mt-0.5">{currentNotif.action} <span className="text-[#FF6B1A] font-bold">{currentNotif.detail}</span></p>
-          </div>
-          <button onClick={() => setShowNotif(false)} className="text-[#6F7178] hover:text-[#171C38] p-1">
-            <X className="w-3.5 h-3.5" />
+      {showNotif && currentNotif && !isDismissed && (
+        <div className="fixed bottom-6 left-6 z-50 bg-[#FAF6EE]/95 backdrop-blur-md border border-[#FF6B1A]/20 rounded-full px-4 py-2 shadow-lg shadow-orange-500/5 flex items-center gap-2.5 animate-slide-up text-[10px] font-semibold text-[#171C38] max-w-sm">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B1A] animate-ping flex-shrink-0" />
+          <span className="truncate">
+            <span className="font-bold text-[#FF6B1A]">{currentNotif.name}</span>{' '}
+            {currentNotif.action}{' '}
+            <span className="text-[#FF6B1A] font-bold">{currentNotif.detail}</span>
+          </span>
+          <button 
+            onClick={handleCloseNotif} 
+            className="text-[#6F7178] hover:text-[#171C38] p-0.5 rounded-full hover:bg-[#171C38]/5 transition-colors flex-shrink-0 ml-1"
+          >
+            <X className="w-3 h-3" />
           </button>
         </div>
       )}
