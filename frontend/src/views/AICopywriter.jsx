@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, MessageCircle, Send, Video, Share2, Clipboard, Check, HelpCircle, Phone, MapPin, QrCode } from 'lucide-react';
+import { Sparkles, MessageCircle, Send, Video, Share2, Clipboard, Check, HelpCircle, Phone, MapPin, QrCode, Printer } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import { fetchApi } from '../services/apiClient';
 
@@ -295,7 +295,7 @@ export default function AICopywriter() {
         </div>
       ) : (
         /* ==================== CARD DESIGNER TAB ==================== */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full no-print">
           {/* Inputs on the left */}
           <div className="lg:col-span-5 space-y-6 w-full">
             <div className="glass-card rounded-[20px] p-6 space-y-5 shadow-lg border border-[#E8E8E8]">
@@ -463,9 +463,83 @@ export default function AICopywriter() {
               * Klik kartu di atas untuk membalik dan melihat sisi belakang.
             </p>
 
+            {/* Print Card Button */}
+            <button
+              onClick={() => window.print()}
+              className="w-full max-w-[400px] bg-[#FF6B1A] hover:bg-[#FF8A3D] text-white py-3.5 rounded-[16px] text-xs font-bold transition-all flex items-center justify-center gap-2 press shadow-md hover:shadow-lg no-print"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Cetak Kartu Nama Bisnis (PDF / Kertas)</span>
+            </button>
+
           </div>
         </div>
       )}
+
+      {/* PRINT ELEMENT: Hidden on screen, visible only during print */}
+      <div id="printable-card-area" className="hidden print:block bg-white text-[#171C38] p-8 w-full font-sans">
+        <div className="max-w-2xl mx-auto space-y-8 text-center">
+          <div className="border-b border-[#E8E8E8] pb-4">
+            <h2 className="text-xl font-extrabold text-[#171C38]">Kartu Nama Digital - Perintis UMKM</h2>
+            <p className="text-xs text-[#6F7178] mt-1 font-medium">Hasil ekspor kartu nama bisnis siap cetak</p>
+          </div>
+          
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 py-6">
+            
+            {/* Front Side Print */}
+            <div className={`w-[350px] h-[200px] p-6 flex flex-col justify-between rounded-[18px] border border-[#E8E8E8] shadow-md ${activeTheme.frontBg} ${activeTheme.textFront} text-left`}>
+              <div className="flex justify-between items-start">
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Perintis UMKM Card</span>
+                <Sparkles className="w-4.5 h-4.5" />
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="text-lg font-extrabold tracking-tight">{cardBizName}</h3>
+                <p className="text-[9px] font-semibold opacity-75 italic">{cardSlogan}</p>
+              </div>
+
+              <div className="flex justify-between items-end border-t border-dashed border-current pt-3 opacity-80">
+                <span className="text-[9px] font-bold">{cardOwner}</span>
+                <span className="text-[8px] font-semibold uppercase tracking-wider">Pemilik Usaha</span>
+              </div>
+            </div>
+
+            {/* Back Side Print */}
+            <div className={`w-[350px] h-[200px] p-6 flex flex-col justify-between rounded-[18px] border border-[#E8E8E8] shadow-md ${activeTheme.backBg} ${activeTheme.textBack} text-left`}>
+              <div className="flex justify-between items-start w-full">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-extrabold">{cardBizName}</h4>
+                  
+                  <div className="space-y-1 text-[9px] font-semibold opacity-85">
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="w-3 h-3 flex-shrink-0" />
+                      <span>{cardWA}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <span className="line-clamp-2 leading-tight">{cardAddress}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-14 h-14 bg-white rounded-lg p-1 flex items-center justify-center border border-current shadow-inner flex-shrink-0">
+                  <QrCode className="w-full h-full text-slate-800" strokeWidth={1.5} />
+                </div>
+              </div>
+
+              <div className="flex justify-between items-end border-t border-dashed border-current/30 pt-3 text-[8px] font-bold tracking-wider opacity-75">
+                <span>Scan Kontak WA</span>
+                <span>Hubungi Kami</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div className="border-t border-[#E8E8E8] pt-4 text-[9px] text-[#6F7178] font-medium">
+            * Dicetak melalui Platform Pemberdayaan UMKM - Perintis.
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

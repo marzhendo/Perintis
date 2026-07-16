@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, ShieldAlert, Award, ArrowRight, HelpCircle, CheckCircle2 } from 'lucide-react';
+import { DollarSign, ShieldAlert, Award, ArrowRight, HelpCircle, CheckCircle2, Printer } from 'lucide-react';
 
 const GOLD_PRICE_PER_GRAM = 1400000; // Harga emas standar per gram dalam Rupiah
 const NISAB_GOLD_GRAMS = 85;
@@ -11,6 +11,12 @@ export default function TaxZakatForm() {
   const [assets, setAssets] = useState('');
   const [liabilities, setLiabilities] = useState('');
   const [annualRevenueEstimate, setAnnualRevenueEstimate] = useState('0'); // Estimasi Omzet Setahun untuk threshold Rp 500 juta
+  const [showResults, setShowResults] = useState(false);
+
+  const handleParamChange = (setter, value) => {
+    setter(value);
+    setShowResults(false);
+  };
 
   const formatRupiah = (num) => {
     return new Intl.NumberFormat('id-ID', {
@@ -71,7 +77,7 @@ export default function TaxZakatForm() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsWpOp(true)}
+                  onClick={() => handleParamChange(setIsWpOp, true)}
                   className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all press-sm border ${
                     isWpOp
                       ? 'bg-[#FF6B1A]/10 text-[#FF6B1A] border-[#FF6B1A]'
@@ -82,7 +88,7 @@ export default function TaxZakatForm() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsWpOp(false)}
+                  onClick={() => handleParamChange(setIsWpOp, false)}
                   className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all press-sm border ${
                     !isWpOp
                       ? 'bg-[#FF6B1A]/10 text-[#FF6B1A] border-[#FF6B1A]'
@@ -103,7 +109,7 @@ export default function TaxZakatForm() {
                   type="number"
                   placeholder="Contoh: 15000000"
                   value={monthlyRevenue}
-                  onChange={(e) => setMonthlyRevenue(e.target.value)}
+                  onChange={(e) => handleParamChange(setMonthlyRevenue, e.target.value)}
                   className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-3 pl-10 pr-4 text-sm font-semibold text-[#171C38] transition-all focus-ring"
                 />
               </div>
@@ -122,7 +128,7 @@ export default function TaxZakatForm() {
                     type="number"
                     placeholder="Contoh: 120000000 (120 Juta)"
                     value={annualRevenueEstimate}
-                    onChange={(e) => setAnnualRevenueEstimate(e.target.value)}
+                    onChange={(e) => handleParamChange(setAnnualRevenueEstimate, e.target.value)}
                     className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-3 pl-10 pr-4 text-sm font-semibold text-[#171C38] transition-all focus-ring"
                   />
                 </div>
@@ -139,7 +145,7 @@ export default function TaxZakatForm() {
                     type="number"
                     placeholder="Kas + Stok barang"
                     value={assets}
-                    onChange={(e) => setAssets(e.target.value)}
+                    onChange={(e) => handleParamChange(setAssets, e.target.value)}
                     className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38] transition-all focus-ring"
                   />
                 </div>
@@ -154,12 +160,21 @@ export default function TaxZakatForm() {
                     type="number"
                     placeholder="Utang bahan baku"
                     value={liabilities}
-                    onChange={(e) => setLiabilities(e.target.value)}
+                    onChange={(e) => handleParamChange(setLiabilities, e.target.value)}
                     className="w-full bg-white border border-[#E8E8E8] focus:outline-none focus:border-[#FF6B1A] focus:ring-2 focus:ring-[#FF6B1A]/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-semibold text-[#171C38] transition-all focus-ring"
                   />
                 </div>
               </div>
             </div>
+
+            {/* Action Button: Calculate */}
+            <button
+              onClick={() => setShowResults(true)}
+              className="w-full bg-[#FF6B1A] hover:bg-[#FF8A3D] text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 press shadow-md hover:shadow-lg mt-4"
+            >
+              <DollarSign className="w-4 h-4" />
+              <span>Hitung Pajak & Zakat</span>
+            </button>
 
           </div>
         </div>
@@ -167,53 +182,65 @@ export default function TaxZakatForm() {
         {/* Right Side: Calculation Results & Edu Badges */}
         <div className="lg:col-span-5 space-y-6 w-full">
           
-          {/* Result Card: Pajak */}
-          <div className="glass-card rounded-[20px] p-6 space-y-4 shadow-lg border-l-4 border-l-[#FF6B1A]">
-            <div className="flex justify-between items-center">
-              <h4 className="font-bold text-xs text-[#FF6B1A] uppercase tracking-wider">Pajak UMKM PPh Final</h4>
-              <span className="text-[10px] font-bold text-[#171C38] bg-white border border-[#E8E8E8] px-2 py-0.5 rounded-full">PP 23/2018</span>
-            </div>
-            
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-[#6F7178] uppercase">Estimasi Pajak Bulanan</span>
-              <p className="text-3xl font-extrabold text-[#171C38] tracking-tight">{formatRupiah(monthlyTax)}</p>
-            </div>
-
-            <div className="bg-[#171C38]/5 rounded-xl p-3 flex gap-2">
-              <CheckCircle2 className="w-4 h-4 text-[#FF6B1A] flex-shrink-0 mt-0.5" />
-              <p className="text-[11px] text-[#6F7178] font-semibold leading-relaxed">{taxNote}</p>
-            </div>
-          </div>
-
-          {/* Result Card: Zakat */}
-          <div className="glass-card rounded-[20px] p-6 space-y-4 shadow-lg border-l-4 border-l-emerald-500">
-            <div className="flex justify-between items-center">
-              <h4 className="font-bold text-xs text-emerald-600 uppercase tracking-wider">Zakat Perniagaan (Maal)</h4>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">Nisab: 85g Emas</span>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-[#6F7178] uppercase">Estimasi Zakat Bulanan</span>
-              <p className="text-3xl font-extrabold text-[#171C38] tracking-tight">
-                {isEligibleZakat ? formatRupiah(monthlyZakat) : 'Belum Wajib'}
+          {!showResults ? (
+            <div className="glass-card rounded-[20px] p-8 text-center border border-[#E8E8E8] flex flex-col items-center justify-center min-h-[300px] text-[#6F7178] space-y-3">
+              <Award className="w-12 h-12 stroke-[1.5] text-[#FF6B1A] drop-shadow-[0_0_8px_rgba(255,107,26,0.1)]" />
+              <h4 className="font-bold text-sm text-[#171C38]">Hasil Simulasi</h4>
+              <p className="text-xs text-[#6F7178] font-semibold max-w-xs leading-relaxed">
+                Silakan isi data keuangan usaha Anda pada formulir di sebelah kiri dan klik tombol <b>Hitung Pajak & Zakat</b> untuk memproses hasil kalkulasi.
               </p>
             </div>
+          ) : (
+            <div className="space-y-6 animate-slide-in">
+              {/* Result Card: Pajak */}
+              <div className="glass-card rounded-[20px] p-6 space-y-4 shadow-lg border-l-4 border-l-[#FF6B1A]">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-bold text-xs text-[#FF6B1A] uppercase tracking-wider">Pajak UMKM PPh Final</h4>
+                  <span className="text-[10px] font-bold text-[#171C38] bg-white border border-[#E8E8E8] px-2 py-0.5 rounded-full">PP 23/2018</span>
+                </div>
+                
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-[#6F7178] uppercase">Estimasi Pajak Bulanan</span>
+                  <p className="text-3xl font-extrabold text-[#171C38] tracking-tight">{formatRupiah(monthlyTax)}</p>
+                </div>
 
-            <div className="bg-[#171C38]/5 rounded-xl p-3 space-y-2">
-              <div className="flex gap-2">
-                <ShieldAlert className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isEligibleZakat ? 'text-emerald-500' : 'text-slate-400'}`} />
-                <p className="text-[11px] text-[#6F7178] font-semibold leading-relaxed">
-                  {isEligibleZakat 
-                    ? `Aset bersih perniagaan Anda (${formatRupiah(netAssets)}) telah mencapai batas nisab minimal setahun (${formatRupiah(ANNUAL_NISAB)}).`
-                    : `Aset bersih perniagaan Anda (${formatRupiah(netAssets)}) belum mencapai batas nisab minimal setahun (${formatRupiah(ANNUAL_NISAB)}).`
-                  }
-                </p>
+                <div className="bg-[#171C38]/5 rounded-xl p-3 flex gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#FF6B1A] flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-[#6F7178] font-semibold leading-relaxed">{taxNote}</p>
+                </div>
               </div>
-              <p className="text-[9px] text-[#6F7178] border-t border-[#E8E8E8] pt-2 font-medium">
-                *Simulasi menggunakan estimasi harga emas Rp {formatRupiah(GOLD_PRICE_PER_GRAM)}/gram. Zakat ditunaikan setahun sekali sebesar 2.5% dari sisa aset lancar dikurangi utang.
-              </p>
+
+              {/* Result Card: Zakat */}
+              <div className="glass-card rounded-[20px] p-6 space-y-4 shadow-lg border-l-4 border-l-emerald-500">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-bold text-xs text-emerald-600 uppercase tracking-wider">Zakat Perniagaan (Maal)</h4>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">Nisab: 85g Emas</span>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-[#6F7178] uppercase">Estimasi Zakat Bulanan</span>
+                  <p className="text-3xl font-extrabold text-[#171C38] tracking-tight">
+                    {isEligibleZakat ? formatRupiah(monthlyZakat) : 'Belum Wajib'}
+                  </p>
+                </div>
+
+                <div className="bg-[#171C38]/5 rounded-xl p-3 space-y-2">
+                  <div className="flex gap-2">
+                    <ShieldAlert className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isEligibleZakat ? 'text-emerald-500' : 'text-slate-400'}`} />
+                    <p className="text-[11px] text-[#6F7178] font-semibold leading-relaxed">
+                      {isEligibleZakat 
+                        ? `Aset bersih perniagaan Anda (${formatRupiah(netAssets)}) telah mencapai batas nisab minimal setahun (${formatRupiah(ANNUAL_NISAB)}).`
+                        : `Aset bersih perniagaan Anda (${formatRupiah(netAssets)}) belum mencapai batas nisab minimal setahun (${formatRupiah(ANNUAL_NISAB)}).`
+                      }
+                    </p>
+                  </div>
+                  <p className="text-[9px] text-[#6F7178] border-t border-[#E8E8E8] pt-2 font-medium">
+                    *Simulasi menggunakan estimasi harga emas Rp {formatRupiah(GOLD_PRICE_PER_GRAM)}/gram. Zakat ditunaikan setahun sekali sebesar 2.5% dari sisa aset lancar dikurangi utang.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </div>

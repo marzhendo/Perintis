@@ -268,3 +268,46 @@ body {
   background: rgba(255, 107, 26, 0.1) !important;
   color: #FF6B1A !important;
 }
+
+/* ── PRINT MEDIA STYLES ── */
+@media print {
+  /* Hide all layout decoration backgrounds, navigation bars, footers, headers and buttons */
+  body, html, #root {
+    background: white !important;
+    color: #171C38 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  header, footer, nav, aside, 
+  .no-print, button, .btn-primary, .btn-secondary, 
+  [role="navigation"], #root > header, #root > footer, #root > nav {
+    display: none !important;
+  }
+  
+  /* Reset page wrapper spacing for print */
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Force light background and clean borders on glass cards */
+  .glass-card {
+    background: white !important;
+    border: 1px solid #e8e8e8 !important;
+    box-shadow: none !important;
+    color: #171C38 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    page-break-inside: avoid;
+  }
+  
+  /* Print Layout: Force full width */
+  .lg\:col-span-7, .lg\:col-span-5, .lg\:col-span-8, .lg\:col-span-4 {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-basis: 100% !important;
+  }
+}
