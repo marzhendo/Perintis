@@ -14,6 +14,10 @@ export default function TaxZakatForm() {
   const [showResults, setShowResults] = useState(false);
 
   const handleParamChange = (setter, value) => {
+    // Batasi input maksimal 12 digit (999 Miliar Rupiah) untuk mencegah layout pecah/overflow
+    if (value.length > 12) {
+      value = value.slice(0, 12);
+    }
     setter(value);
     setShowResults(false);
   };
