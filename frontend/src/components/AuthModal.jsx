@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Mail, Lock, User, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { fetchApi } from '../services/apiClient';
 
@@ -114,8 +115,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const inputClass = (key) =>
     `w-full bg-[#171C38]/5 border ${errors[key] ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-[#FF6B1A]/20 focus:border-[#FF6B1A] focus:ring-[#FF6B1A]/10'} focus:outline-none focus:ring-2 rounded-[18px] py-2.5 pl-10 pr-10 text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] transition-all focus-ring`;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#171C38]/85 backdrop-blur-sm animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#171C38]/85 backdrop-blur-sm animate-fade-in">
       <div className="absolute inset-0" />
       <div className="relative w-full max-w-md bg-[#FAF6EE]/95 border border-[#FF6B1A]/20 shadow-2xl shadow-orange-500/10 rounded-[24px] p-6 md:p-8 animate-scale-in text-left">
         <button
@@ -316,6 +317,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

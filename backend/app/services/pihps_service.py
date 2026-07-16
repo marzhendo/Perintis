@@ -15,7 +15,10 @@ import os
 import re
 import time
 import requests
+import logging
 from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 
 BASE_URL = "https://www.bi.go.id"
@@ -119,7 +122,7 @@ def _fetch_national_price(session, temp_id: str, com_name: str) -> dict | None:
                         "fluc": float(item.get("fluc", 0) or 0),
                     }
         except Exception as e:
-            print(f"  Warning: Error fetching '{name}': {e}")
+            logger.warning(f"Error fetching '{name}': {e}")
         time.sleep(0.2)  # Small delay between requests
     
     return None
@@ -144,7 +147,7 @@ def _extract_province_prices(html: str) -> dict:
                 result[prov_name] = int(price)
         return result
     except Exception as e:
-        print(f"  Warning: Error parsing province data: {e}")
+        logger.warning(f"Error parsing province data: {e}")
         return {}
 
 
@@ -176,60 +179,95 @@ def _build_history(old_history: list, old_price: int, new_price: int) -> list:
     return history
 
 
+def _fetch_province_prices(session, province_id: str, today_str_ymd: str, today_str_dmy: str) -> list:
+    url = 'https://www.bi.go.id/hargapangan/WebSite/TabelHarga/GetGridDataDaerah'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Referer': 'https://www.bi.go.id/hargapangan/TabelHarga/PasarTradisionalDaerah',
+    }
+    params = {
+        "price_type_id": "1",  
+        "comcat_id": "",  
+        "province_id": province_id,   
+        "regency_id": "",
+        "market_id": "",
+        "tipe_laporan": "1",
+        "start_date": today_str_ymd,
+        "end_date": today_str_ymd,
+    }
+    try:
+        resp = session.get(url, headers=headers, params=params, timeout=15)
+        if resp.status_code == 200:
+            data = resp.json()
+            items = data.get("data", [])
+            results = []
+            for item in items:
+                # We only want items with level == 2 (actual commodities, not categories)
+                if item.get("level") == 2:
+                    name = item.get("name", "")
+                    raw_price = item.get(today_str_dmy)
+                    
+                    if raw_price and isinstance(raw_price, str):
+                        price_str = raw_price.replace(",", "").replace(".", "").strip()
+                        if price_str and price_str.isdigit():
+                            results.append({"name": name, "price": int(price_str)})
+            return results
+    except Exception as e:
+        logger.warning(f"Error fetching province {province_id}: {e}")
+    return []
+
 def update_prices():
     """
     Main function: Scrape BI hargapangan and update commodity_prices.json.
     - Fetches national prices for all 21 commodities
-    - Fetches per-province prices from embedded jsonString (34 provinces)
-    - Updates commodity_prices.json with real BI data, no synthetic multipliers
+    - Fetches per-province prices from GetGridDataDaerah endpoint (34 provinces)
+    - Updates commodity_prices.json with structured format
     """
-    print(f"[{datetime.now()}] Starting BI hargapangan price update...")
+    logger.info("Starting BI hargapangan price update...")
     
-    # Load current data
     data = _load_price_file()
-    old_commodities = {c["name"]: c for c in data.get("commodities", [])}
+    # Migrate old format if needed
+    old_national = data.get("national", data.get("commodities", []))
+    old_commodities = {c["name"]: c for c in old_national}
     
     try:
-        # Establish session
         session = _create_session()
         
-        # Fetch main page HTML
         resp0 = session.get(PAGE_URL, headers={
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml",
         }, timeout=20)
-        
         if resp0.status_code != 200:
             raise Exception(f"HTTP {resp0.status_code} on main page")
         
         html = resp0.text
         temp_id = _get_temp_id(html)
-        print(f"  Session established, temp_id: {temp_id[:8]}...")
+        logger.info(f"Session established, temp_id: {temp_id[:8]}...")
         
-        # Step 1: Scrape national prices for all 21 commodities
         scraped_national = {}
-        today_str = datetime.now().strftime("%d %b %Y")
+        now = datetime.now()
+        today_str = now.strftime("%d %b %Y")
+        today_str_ymd = now.strftime("%Y-%m-%d")
+        today_str_dmy = now.strftime("%d/%m/%Y")
+        if today_str_dmy.startswith("0"):
+            # BI format uses no leading zero on day if it's 1-9? Wait, "16/07/2026" uses leading zero.
+            # But let's check. Wait! In my previous curl it was "16/07/2026". We should stick to %d/%m/%Y.
+            pass
         
-        print("  Fetching national prices...")
+        logger.info("Fetching national prices...")
         for com in COMMODITIES:
             result = _fetch_national_price(session, temp_id, com["name"])
             if result:
                 scraped_national[com["name"]] = result
                 price_date = result["date"]
-                print(f"    {com['name']}: Rp {result['price']:,} ({price_date})")
+                logger.info(f"  {com['name']}: Rp {result['price']:,} ({price_date})")
             else:
-                print(f"    {com['name']}: Failed to fetch — keeping previous price")
+                logger.warning(f"  {com['name']}: Failed to fetch — keeping previous price")
             time.sleep(0.1)
-        
-        # Step 2: Extract per-province prices from HTML jsonString
-        province_prices = _extract_province_prices(html)
-        if province_prices:
-            print(f"  Per-province prices extracted: {len(province_prices)} provinces")
-        else:
-            print("  Warning: No per-province prices found in HTML")
-        
-        # Step 3: Build updated commodities list
-        updated_commodities = []
+            
+        updated_national = []
         for com in COMMODITIES:
             old = old_commodities.get(com["name"], {})
             old_price = old.get("price", 0)
@@ -242,7 +280,6 @@ def update_prices():
                 change_pct = scraped["fluc"]
                 price_date = scraped["date"]
             else:
-                # Keep old price if scraping failed
                 new_price = old_price
                 change_rp = old.get("changeRp", 0)
                 change_pct = old.get("change", 0.0)
@@ -250,14 +287,13 @@ def update_prices():
             
             is_up = True if change_rp > 0 else (False if change_rp < 0 else None)
             
-            # Format date: e.g., "2026-07-10" -> "10 Jul 2026"
             try:
                 dt = datetime.strptime(price_date, "%Y-%m-%d")
                 formatted_date = dt.strftime("%d %b %Y")
             except Exception:
                 formatted_date = today_str
             
-            updated_commodities.append({
+            updated_national.append({
                 "id": com["id"],
                 "name": com["name"],
                 "unit": com["unit"],
@@ -268,41 +304,62 @@ def update_prices():
                 "date": formatted_date,
                 "history": _build_history(old_history, old_price, new_price),
             })
+            
+        logger.info("Fetching per-province prices...")
+        old_provinces = data.get("provinces", {})
+        new_provinces = dict(old_provinces)
+        success_count = 0
         
-        # Step 4: Assemble final data structure
-        data["commodities"] = updated_commodities
+        for prov_name, prov_id in PROVINCE_IDS.items():
+            prov_data = _fetch_province_prices(session, str(prov_id), today_str_ymd, today_str_dmy)
+            if prov_data:
+                new_provinces[prov_name] = prov_data
+                success_count += 1
+                logger.info(f"  Fetched {len(prov_data)} commodities for {prov_name}")
+            else:
+                logger.warning(f"  Failed to fetch commodities for {prov_name}, keeping old data if exists.")
+            time.sleep(0.5) # Gentle delay between provinces
+            
+        # Build final data
+        final_data = {
+            "last_updated": today_str,
+            "national": updated_national,
+            "provinces": new_provinces,
+            "source": "Bank Indonesia — Pusat Informasi Harga Pangan Strategis Nasional",
+            "source_url": "https://www.bi.go.id/hargapangan"
+        }
         
-        # Store province prices keyed by province name
-        # province_prices contains prices for the DEFAULT commodity shown on BI map
-        # (which is typically Beras Kualitas Medium I)
-        if province_prices:
-            data["province_beras_medium_i"] = province_prices
-            data["province_data_source"] = "Bank Indonesia PIHPS — Beras Kualitas Medium I (peta awal)"
-            data["province_data_updated"] = today_str
+        _save_price_file(final_data)
+        logger.info(f"Price update completed. {len(scraped_national)}/21 national prices, {success_count}/{len(PROVINCE_IDS)} provinces updated.")
         
-        data["last_updated"] = today_str
-        data["source"] = "Bank Indonesia — Pusat Informasi Harga Pangan Strategis Nasional"
-        data["source_url"] = "https://www.bi.go.id/hargapangan"
-        
-        _save_price_file(data)
-        print(f"[{datetime.now()}] Price update completed. "
-              f"{len(scraped_national)}/21 national prices scraped, "
-              f"{len(province_prices)} provinces updated.")
-    
     except Exception as e:
-        print(f"[{datetime.now()}] Error during price update: {e}")
-        # Keep existing data unchanged on error
+        logger.error(f"Error during price update: {e}", exc_info=True)
 
+def is_data_stale_or_empty(data: dict) -> bool:
+    today_str = datetime.now().strftime("%d %b %Y")
+    if data.get("last_updated") != today_str:
+        return True
+    provinces = data.get("province_beras_medium_i", {})
+    if not provinces:
+        return True
+    if all(val == 0 for val in provinces.values()):
+        return True
+    return False
 
 def start_price_updater():
     """Background thread that updates prices daily at 07:00 local time."""
-    print("Background Daily Price Updater Started (Source: Bank Indonesia PIHPS)")
+    logger.info("Background Daily Price Updater Started (Source: Bank Indonesia PIHPS)")
     
-    # Run once at startup
+    # Run once at startup if data is stale or empty
     try:
-        update_prices()
+        data = _load_price_file()
+        if is_data_stale_or_empty(data):
+            logger.info("Data is stale or empty (provinces are 0). Triggering immediate scrape.")
+            update_prices()
+        else:
+            logger.info("Data is fresh. Skipping startup scrape.")
     except Exception as e:
-        print(f"Startup price update error: {e}")
+        logger.error(f"Startup price update error: {e}", exc_info=True)
     
     while True:
         try:
@@ -312,7 +369,6 @@ def start_price_updater():
                 next_run += timedelta(days=1)
             
             sleep_seconds = (next_run - now).total_seconds()
-            # Sleep in small intervals to stay responsive
             time.sleep(min(sleep_seconds, 60))
             
             now_check = datetime.now()
@@ -320,5 +376,10 @@ def start_price_updater():
                 update_prices()
                 time.sleep(65)  # Skip rest of this minute
         except Exception as e:
-            print(f"Error in background updater: {e}")
+            logger.error(f"Error in background updater: {e}", exc_info=True)
             time.sleep(60)
+
+# manual trigger for testing
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    update_prices()

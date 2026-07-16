@@ -104,6 +104,35 @@ export default function HargaPangan({ region }) {
       .join(' ');
   };
 
+  const handleExportCSV = () => {
+    if (!filtered || filtered.length === 0) return;
+    
+    const headers = ["Komoditas", "Tanggal", "Harga (Rp)", "Perubahan (%)", "Perubahan (Rp)", "Status"];
+    
+    const rows = filtered.map(item => {
+      const name = `"${item.name}"`;
+      const date = `"${item.date}"`;
+      const status = item.isUp === null ? "Tetap" : (item.isUp ? "Naik" : "Turun");
+      return [name, date, item.price, item.change, item.changeRp, status].join(",");
+    });
+    
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    
+    const provName = activeLocation ? activeLocation.toLowerCase().replace(/\s+/g, '-') : "nasional";
+    const dateStr = commodities[0]?.date ? commodities[0].date.replace(/\s+/g, '-') : "hari-ini";
+    link.setAttribute("download", `harga-pangan-${provName}-${dateStr}.csv`);
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const dataDate = commodities[0]?.date || '';
 
   return (
@@ -321,7 +350,10 @@ export default function HargaPangan({ region }) {
               </p>
             )}
           </div>
-          <button className="text-[#FF6B1A] font-semibold text-xs hover:bg-[#FF6B1A]/10 border border-[#FF6B1A]/20 px-4 py-2 rounded-xl transition-all flex items-center gap-2">
+          <button 
+            onClick={handleExportCSV}
+            className="text-[#FF6B1A] font-semibold text-xs hover:bg-[#FF6B1A]/10 border border-[#FF6B1A]/20 px-4 py-2 rounded-xl transition-all flex items-center gap-2"
+          >
             <Download className="w-4 h-4" />
             <span>Export CSV</span>
           </button>
