@@ -19,6 +19,19 @@ app.state.limiter = limiter
 # ---------------------------------------------------------------------------
 Base.metadata.create_all(bind=engine)
 
+# Auto-migration: Tambahkan kolom firebase_uid jika belum ada di tabel users
+from sqlalchemy import text
+try:
+    with engine.begin() as conn:
+        result = conn.execute(text("PRAGMA table_info(users)"))
+        columns = [row[1] for row in result.fetchall()]
+        if "firebase_uid" not in columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN firebase_uid VARCHAR"))
+except Exception as e:
+    import logging
+    logging.getLogger(__name__).error(f"Gagal melakukan auto-migrasi database: {e}")
+
+
 @app.on_event("startup")
 def startup_event():
     import threading
@@ -32,7 +45,13 @@ frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend_url, "http://127.0.0.1:5173"],
+    allow_origins=[
+        frontend_url,
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://perintis-umkm.web.app",
+        "https://perintis-umkm.firebaseapp.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -100,3 +100,8 @@ class AuthResponse(BaseModel):
     """Dipakai di register & login: mengembalikan user data + token sekaligus."""
     user: UserResponse
     token: Token
+
+
+class FirebaseLoginRequest(BaseModel):
+    id_token: str
+

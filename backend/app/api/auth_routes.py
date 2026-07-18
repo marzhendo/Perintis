@@ -11,8 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..schemas.schemas import UserRegister, UserLogin, UserResponse, Token, AuthResponse, ChangePasswordRequest, ForgotPasswordRequest, ResetPasswordRequest
+from ..schemas.schemas import UserRegister, UserLogin, UserResponse, Token, AuthResponse, ChangePasswordRequest, ForgotPasswordRequest, ResetPasswordRequest, FirebaseLoginRequest
 from ..services import auth_service
+from ..services.firebase_service import verify_firebase_token
 from ..dependencies.auth import get_current_user
 from ..models.user import User
 
@@ -100,3 +101,51 @@ def reset_password(request: Request, data: ResetPasswordRequest, db: Session = D
     user.password_hash = auth_service.hash_password(data.new_password)
     db.commit()
     return {"message": "Password berhasil diperbarui. Silakan masuk dengan password baru Anda."}
+
+
+@router.post("/firebase", response_model=AuthResponse)
+def firebase_auth_endpoint(data: FirebaseLoginRequest, db: Session = Depends(get_db)):
+    # 1. Verifikasi ID Token Firebase secara lokal
+    payload = verify_firebase_token(data.id_token)
+    
+    email = payload.get("email")
+    uid = payload.get("sub")  # Firebase UID di claim 'sub'
+    name = payload.get("name") or (email.split("@")[0] if email else "User")
+    
+    if not email or not uid:
+        raise HTTPException(
+            status_code=400,
+            detail="Token Firebase tidak memiliki email atau UID yang valid."
+        )
+        
+    # 2. Cari user di DB lokal atau buat baru
+    user = db.query(User).filter(User.firebase_uid == uid).first()
+    
+    if not user:
+        # Cek apakah ada akun lokal lama dengan email yang sama
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            # Hubungkan user lama dengan firebase_uid
+            user.firebase_uid = uid
+            db.commit()
+            db.refresh(user)
+        else:
+            # Pendaftaran user baru secara otomatis
+            user = User(
+                email=email,
+                name=name,
+                firebase_uid=uid,
+                password_hash=None
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            
+    # 3. Buat local token JWT untuk otorisasi endpoint backend lainnya
+    token = auth_service.create_access_token({"sub": str(user.id)})
+    
+    return AuthResponse(
+        user=UserResponse.model_validate(user),
+        token=Token(access_token=token),
+    )
+
