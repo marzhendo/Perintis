@@ -1,5 +1,5 @@
 from __future__ import annotations
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies.auth import get_current_user_optional
@@ -11,6 +11,7 @@ from ..services.financial_service import calculate_hpp, calculate_margin, calcul
 from ..services.validator_service import validate_business_idea
 from ..services.trend_service import get_viral_trends
 from ..services.copywriter_service import generate_copy
+from ..core.rate_limit import limiter
 
 router = APIRouter()
 
@@ -68,7 +69,8 @@ def trends():
 
 
 @router.post("/copywriter")
-def copywriter(req: CopywriterRequest):
+@limiter.limit("5/minute")
+def copywriter(request: Request, req: CopywriterRequest):
     """POST /api/copywriter — PUBLIC.
     
     Generates promotional copy using Gemini AI.
