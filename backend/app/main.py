@@ -12,7 +12,9 @@ app = FastAPI(title="Perintis API")
 
 from .core.rate_limit import limiter
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 
 # ---------------------------------------------------------------------------
 # Inisialisasi database — create tables if not exist
