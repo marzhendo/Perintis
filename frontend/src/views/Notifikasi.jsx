@@ -17,7 +17,7 @@ function NotifItem({ notif, onMarkRead }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <h4 className={`text-sm ${notif.read ? 'text-slate-200' : 'text-white font-bold'}`}>{notif.title}</h4>
+          <h4 className={`text-sm ${notif.read ? 'text-[#171C38]/60 font-semibold' : 'text-[#171C38] font-extrabold'}`}>{notif.title}</h4>
           {!notif.read && (
             <button onClick={() => onMarkRead(notif.id)} className="flex-shrink-0 p-1.5 rounded-full hover:bg-[#FF6B1A]/10 transition-colors" title="Tandai sudah dibaca">
               <CheckCheck className="w-4 h-4 text-[#FF6B1A]" />
@@ -42,7 +42,7 @@ export default function Notifikasi({ user, onOpenAuth }) {
           setNotifs(data.map(n => ({
             id: n.id,
             title: n.title,
-            desc: n.pesan,
+            desc: n.message,
             read: n.is_read,
             type: n.type,
             time: new Date(n.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })

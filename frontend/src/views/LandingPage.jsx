@@ -49,9 +49,9 @@ export default function LandingPage({ setActiveTab }) {
         {/* Social Proof Badge / Overlapping Avatars */}
         <div className="inline-flex items-center gap-3 bg-[#171C38]/5 border border-[#E8E8E8] px-4 py-2 rounded-full mb-8 animate-float">
           <div className="flex -space-x-2">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#FF6B1A] to-[#FF8A3D] border border-[#171C38] flex items-center justify-center text-[8px] font-bold text-[#171C38]">UM</div>
-            <div className="w-6 h-6 rounded-full bg-[#FF6B1A] border border-[#171C38] flex items-center justify-center text-[8px] font-bold text-[#171C38]">AI</div>
-            <div className="w-6 h-6 rounded-full bg-[#FAF6EE] border border-[#171C38] flex items-center justify-center text-[8px] font-bold text-[#171C38]">KD</div>
+            <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#FF6B1A] to-[#FF8A3D] border border-[#171C38] flex items-center justify-center text-[8px] font-bold text-[#171C38]" style={{ color: '#171C38' }}>UM</div>
+            <div className="w-6 h-6 rounded-full bg-[#FF6B1A] border border-[#171C38] flex items-center justify-center text-[8px] font-bold text-[#171C38]" style={{ color: '#171C38' }}>AI</div>
+            <div className="w-6 h-6 rounded-full bg-[#FAF6EE] border border-[#171C38] flex items-center justify-center text-[8px] font-bold text-[#171C38]" style={{ color: '#171C38' }}>KD</div>
           </div>
           <span className="text-[11px] font-bold text-[#171C38]/85 tracking-wide">
             Ribuan calon wirausaha telah memvalidasi ide bisnis di sini

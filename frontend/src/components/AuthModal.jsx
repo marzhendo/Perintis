@@ -62,6 +62,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const [mode, setMode] = useState('login'); // 'login' | 'register' | 'forgot' | 'reset'
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
   const [showPasswordHint, setShowPasswordHint] = useState(false);
@@ -152,70 +153,81 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     setLoading(true);
     try {
       if (mode === 'forgot') {
-        await sendPasswordResetEmail(auth, form.email);
-        setErrors({ general: 'Tautan reset password telah dikirim ke email Anda. Silakan cek kotak masuk Anda.' });
+        const res = await fetchApi('/api/auth/forgot-password', {
+          method: 'POST',
+          body: JSON.stringify({ email: form.email })
+        });
+        
+        let successMsg = 'Kode verifikasi telah dikirim ke email Anda. Silakan periksa kotak masuk.';
+        if (res.demo_code) {
+          successMsg = `[DEV MODE] Kode OTP Anda: ${res.demo_code}. Silakan masukkan kode ini di halaman berikutnya.`;
+        }
+        
+        setSuccessMessage(successMsg);
+        setSuccess(true);
+        await new Promise(r => setTimeout(r, 3000));
+        setSuccess(false);
+        setSuccessMessage('');
+        switchMode('reset');
+      } else if (mode === 'reset') {
+        await fetchApi('/api/auth/reset-password', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: form.email,
+            code: form.resetCode,
+            new_password: form.newPassword
+          })
+        });
+        
+        setSuccessMessage('Password Anda berhasil diperbarui. Mengalihkan ke halaman masuk...');
         setSuccess(true);
         await new Promise(r => setTimeout(r, 2000));
         setSuccess(false);
-        setMode('login');
+        setSuccessMessage('');
+        switchMode('login');
       } else if (mode === 'register') {
-        const userCredential = await createUserWithEmailAndPassword(auth, form.email, form.password);
-        
-        // Kirim email verifikasi secara asinkron
-        try {
-          await sendEmailVerification(userCredential.user);
-        } catch (err) {
-          console.error("Gagal mengirim email verifikasi:", err);
-        }
-        
-        const idToken = await userCredential.user.getIdToken();
-        
-        const res = await fetchApi('/api/auth/firebase', {
+        const res = await fetchApi('/api/auth/register', {
           method: 'POST',
-          body: JSON.stringify({ id_token: idToken, name: form.name })
+          body: JSON.stringify({
+            email: form.email,
+            password: form.password,
+            name: form.name
+          })
         });
         
         localStorage.setItem('perintis_token', res.token.access_token);
         localStorage.setItem('perintis_user', JSON.stringify(res.user));
         
+        setSuccessMessage('Pendaftaran berhasil! Akun Anda siap digunakan.');
         setSuccess(true);
-        setErrors({ general: 'Akun berhasil dibuat! Silakan cek email Anda untuk memverifikasi akun Anda.' });
-        await new Promise(r => setTimeout(r, 2500));
+        await new Promise(r => setTimeout(r, 1500));
+        setSuccess(false);
+        setSuccessMessage('');
         onLoginSuccess(res.user);
         onClose();
       } else if (mode === 'login') {
-        const userCredential = await signInWithEmailAndPassword(auth, form.email, form.password);
-        const idToken = await userCredential.user.getIdToken();
-        
-        const res = await fetchApi('/api/auth/firebase', {
+        const res = await fetchApi('/api/auth/login', {
           method: 'POST',
-          body: JSON.stringify({ id_token: idToken })
+          body: JSON.stringify({
+            email: form.email,
+            password: form.password
+          })
         });
         
         localStorage.setItem('perintis_token', res.token.access_token);
         localStorage.setItem('perintis_user', JSON.stringify(res.user));
         
+        setSuccessMessage('Masuk berhasil. Selamat datang kembali!');
         setSuccess(true);
         await new Promise(r => setTimeout(r, 1200));
+        setSuccess(false);
+        setSuccessMessage('');
         onLoginSuccess(res.user);
         onClose();
       }
     } catch (error) {
       console.error("Auth error:", error);
-      let errorMsg = error.message;
-      if (error.code === 'auth/email-already-in-use') {
-        errorMsg = 'Email sudah terdaftar. Silakan masuk atau gunakan email lain.';
-      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-        errorMsg = 'Email atau password salah.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMsg = 'Password terlalu lemah. Minimal 6 karakter.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMsg = 'Format email tidak valid.';
-      } else if (error.code === 'auth/user-disabled') {
-        errorMsg = 'Akun ini telah dinonaktifkan.';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMsg = 'Terlalu banyak percobaan login yang gagal. Silakan coba beberapa saat lagi.';
-      }
+      let errorMsg = error.message || 'Terjadi kesalahan pada server.';
       setErrors({ general: errorMsg });
     } finally {
       setLoading(false);
@@ -251,10 +263,13 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
               )}
             </div>
             <h3 className="text-xl font-extrabold text-[#171C38] mb-1">
-              {mode === 'login' ? 'Masuk Berhasil!' : mode === 'reset' ? 'Password Diperbarui!' : 'Akun Berhasil Dibuat!'}
+              {mode === 'login' && 'Masuk Berhasil!'}
+              {mode === 'register' && 'Akun Berhasil Dibuat!'}
+              {mode === 'forgot' && 'Kode OTP Terkirim!'}
+              {mode === 'reset' && 'Password Diperbarui!'}
             </h3>
-            <p className="text-sm text-[#6F7178] font-medium">
-              {mode === 'reset' ? 'Silakan masuk dengan password baru Anda.' : 'Selamat datang kembali di Perintis.'}
+            <p className="text-xs text-[#6F7178] font-semibold max-w-[280px] mx-auto leading-relaxed">
+              {successMessage}
             </p>
           </div>
         ) : (

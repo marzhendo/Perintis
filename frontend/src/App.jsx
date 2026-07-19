@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import Header from './components/Header';
 import BottomNav from './components/BottomNav';
 import Footer from './components/Footer';
@@ -12,21 +12,24 @@ import useUser from './hooks/useUser';
 import useAppData from './hooks/useAppData';
 import { fetchApi } from './services/apiClient';
 import logo from './assets/images/Perintis.svg';
-import { Bell } from 'lucide-react';
-import LandingPage from './views/LandingPage';
-import HargaPangan from './views/HargaPangan';
-import Validator from './views/Validator';
-import Calculator from './views/Calculator';
-import ForumTerbuka from './views/ForumTerbuka';
-import ROIProjections from './views/ROIProjections';
-import Panduan from './views/Panduan';
-import LokasiPasar from './views/LokasiPasar';
-import Notifikasi from './views/Notifikasi';
-import ProfilSaya from './views/ProfilSaya';
-import KebijakanPrivasi from './views/KebijakanPrivasi';
-import KetentuanLayanan from './views/KetentuanLayanan';
-import SertifikasiEkspor from './views/SertifikasiEkspor';
-import AICopywriter from './views/AICopywriter';
+import { Bell, Sun, Moon } from 'lucide-react';
+
+// Lazy load views for optimal code-splitting and performance
+const LandingPage = lazy(() => import('./views/LandingPage'));
+const HargaPangan = lazy(() => import('./views/HargaPangan'));
+const Validator = lazy(() => import('./views/Validator'));
+const Calculator = lazy(() => import('./views/Calculator'));
+const ForumTerbuka = lazy(() => import('./views/ForumTerbuka'));
+const ROIProjections = lazy(() => import('./views/ROIProjections'));
+const Panduan = lazy(() => import('./views/Panduan'));
+const LokasiPasar = lazy(() => import('./views/LokasiPasar'));
+const Notifikasi = lazy(() => import('./views/Notifikasi'));
+const ProfilSaya = lazy(() => import('./views/ProfilSaya'));
+const KebijakanPrivasi = lazy(() => import('./views/KebijakanPrivasi'));
+const KetentuanLayanan = lazy(() => import('./views/KetentuanLayanan'));
+const SertifikasiEkspor = lazy(() => import('./views/SertifikasiEkspor'));
+const AICopywriter = lazy(() => import('./views/AICopywriter'));
+
 
 export default function App() {
   const { activeTab, handleTabChange } = useTabRouting();
@@ -34,6 +37,23 @@ export default function App() {
   const { validationData, setValidationData, calculationData, setCalculationData, selectedRegion, setSelectedRegion } = useAppData();
   const [authModalOpen, setAuthModalOpen] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
+
+  const [theme, setTheme] = React.useState(() => {
+    return localStorage.getItem('perintis_theme') || 'light';
+  });
+
+  React.useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('perintis_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   // Auto-logout on token expiration
   React.useEffect(() => {
@@ -79,9 +99,9 @@ export default function App() {
   return (
     <ErrorBoundary>
     <ToastProvider>
-    <div className="min-h-screen bg-[#FAF6EE] text-[#171C38] antialiased selection:bg-[#FF6B1A]/20 selection:text-[#171C38] relative overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-[var(--color-surface)] text-[var(--color-text-primary)] antialiased selection:bg-[#FF6B1A]/20 selection:text-[#171C38] relative overflow-x-hidden flex flex-col transition-colors duration-300">
       <FuturisticBackground />
-      <Header activeTab={activeTab} setActiveTab={handleTabChange} user={user} unreadCount={unreadCount} onOpenAuth={() => setAuthModalOpen(true)} onLogout={logout} />
+      <Header activeTab={activeTab} setActiveTab={handleTabChange} user={user} unreadCount={unreadCount} onOpenAuth={() => setAuthModalOpen(true)} onLogout={logout} theme={theme} toggleTheme={toggleTheme} />
       <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
 
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#E8E8E8] px-4 sm:px-6 py-3 flex items-center justify-between shadow-sm">
@@ -91,6 +111,13 @@ export default function App() {
           </div>
         </button>
         <div className="flex items-center gap-1.5 relative">
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 rounded-full transition-all text-[#171C38]/60 hover:text-[#171C38] dark:text-[#FAF6EE]/60 dark:hover:text-[#FAF6EE] hover:bg-[#171C38]/10 cursor-pointer"
+            title={theme === 'light' ? 'Mode Gelap' : 'Mode Terang'}
+          >
+            {theme === 'light' ? <Moon className="w-4.5 h-4.5" /> : <Sun className="w-4.5 h-4.5" />}
+          </button>
           <button onClick={() => handleTabChange('notifikasi')} className={`relative p-1.5 rounded-full transition-all ${activeTab === 'notifikasi' ? 'text-[#FF6B1A] bg-[#FF6B1A]/10' : 'text-[#171C38]/60 hover:text-[#171C38] hover:bg-[#171C38]/10'}`}>
             <Bell className="w-4.5 h-4.5" />
             {user && unreadCount > 0 && (
@@ -109,11 +136,17 @@ export default function App() {
         </div>
       </header>
 
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#FAF6EE] to-transparent pointer-events-none z-40" />
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[var(--color-surface)] to-transparent pointer-events-none z-40" />
 
       <main className="flex-1 w-full px-4 sm:px-6 lg:px-10 pt-20 lg:pt-32 pb-32 lg:pb-16 max-w-[1200px] mx-auto box-border">
         <div key={activeTab} className="animate-fade-in">
-          {renderView()}
+          <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[40vh] w-full">
+              <div className="w-8 h-8 border-4 border-[#FF6B1A] border-t-transparent rounded-full animate-spin" />
+            </div>
+          }>
+            {renderView()}
+          </Suspense>
         </div>
       </main>
 

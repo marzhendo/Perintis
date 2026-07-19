@@ -31,15 +31,31 @@ try:
             conn.execute(text("ALTER TABLE users ADD COLUMN firebase_uid VARCHAR"))
 except Exception as e:
     import logging
-    logging.getLogger(__name__).error(f"Gagal melakukan auto-migrasi database: {e}")
+    logging.getLogger(__name__).error(f"Gagal melakukan auto-migrasi database users: {e}")
+
+# Auto-migration: Tambahkan kolom failed_attempts jika belum ada di tabel otp_verifications
+try:
+    with engine.begin() as conn:
+        conn.execute(text("SELECT failed_attempts FROM otp_verifications LIMIT 1"))
+except Exception:
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE otp_verifications ADD COLUMN failed_attempts INTEGER DEFAULT 0"))
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Gagal melakukan auto-migrasi database otp_verifications: {e}")
 
 
 @app.on_event("startup")
 def startup_event():
-    import threading
-    from .services.pihps_service import start_price_updater
-    thread = threading.Thread(target=start_price_updater, daemon=True)
-    thread.start()
+    # Hanya jalankan background thread jika diaktifkan secara eksplisit (seperti dev lokal).
+    # Di produksi (Cloud Run), kita menggunakan Cloud Scheduler untuk memicu update secara serverless.
+    import os
+    if os.getenv("ENABLE_BACKGROUND_UPDATER", "true").lower() == "true":
+        import threading
+        from .services.pihps_service import start_price_updater
+        thread = threading.Thread(target=start_price_updater, daemon=True)
+        thread.start()
 
 import os
 

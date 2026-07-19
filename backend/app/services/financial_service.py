@@ -22,8 +22,9 @@ def calculate_roi(req: CalculateRequest) -> float:
     bep_units = calculate_bep(req)
     if bep_units <= 0:
         return 0
-    monthly_profit = (bep_units * margin) - req.biaya_operasional_bulanan
-    total_monthly = monthly_profit + req.biaya_operasional_bulanan
-    if total_monthly <= 0:
+    # Asumsikan penjualan target adalah 1.5x dari volume BEP (standar kelayakan bisnis)
+    target_sales = bep_units * 1.5
+    monthly_profit = (target_sales * margin) - req.biaya_operasional_bulanan
+    if monthly_profit <= 0:
         return 0
-    return round(req.modal_awal / total_monthly, 1)
+    return round(req.modal_awal / monthly_profit, 1)

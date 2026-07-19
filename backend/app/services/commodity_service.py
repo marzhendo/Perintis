@@ -17,10 +17,20 @@ import os
 from datetime import datetime
 
 
+_cached_data = None
+
 def _load_data() -> dict:
+    global _cached_data
+    if _cached_data is not None:
+        return _cached_data
     path = os.path.join(os.path.dirname(__file__), "..", "data", "commodity_prices.json")
     with open(path, encoding="utf-8") as f:
-        return json.load(f)
+        _cached_data = json.load(f)
+        return _cached_data
+
+def invalidate_commodity_cache():
+    global _cached_data
+    _cached_data = None
 
 
 def get_all_commodities(region: str | None = None):

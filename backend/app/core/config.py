@@ -14,6 +14,13 @@ class Config:
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_HOURS: int = int(os.getenv("JWT_EXPIRE_HOURS", 8))
     FIREBASE_PROJECT_ID: str = os.getenv("FIREBASE_PROJECT_ID", "perintis-umkm")
+    
+    # SMTP Email Configuration
+    SMTP_HOST: str | None = os.getenv("SMTP_HOST")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USER: str | None = os.getenv("SMTP_USER")
+    SMTP_PASSWORD: str | None = os.getenv("SMTP_PASSWORD")
+    SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "Perintis UMKM")
 
     @property
     def gemini_available(self) -> bool:

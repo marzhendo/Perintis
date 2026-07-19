@@ -201,6 +201,172 @@ body {
   border-bottom: 1px solid rgba(23, 28, 56, 0.08) !important;
 }
 
+/* ── Dark Mode Variable & Component Overrides ── */
+.dark {
+  --color-surface: #0B0E14;
+  --color-surface-white: #111422;
+  --color-text-primary: #FAF6EE;
+  --color-text-secondary: #94A3B8;
+  --color-border: #1E293B;
+}
+
+/* Force HTML/body background & transitions */
+.dark html, .dark body {
+  background-color: #0B0E14 !important;
+  color: #FAF6EE !important;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Header & Dropdown dark overrides */
+.dark nav[role="navigation"] {
+  background: rgba(17, 20, 34, 0.9) !important;
+  border-color: #1E293B !important;
+}
+
+.dark nav[role="navigation"] button {
+  color: #FAF6EE !important;
+}
+
+.dark nav[role="navigation"] button:hover {
+  color: #FF6B1A !important;
+}
+
+.dark nav[role="navigation"] .absolute {
+  background: rgba(17, 20, 34, 0.95) !important;
+  border-color: #1E293B !important;
+  color: #FAF6EE !important;
+}
+
+.dark nav[role="navigation"] .absolute button {
+  color: #FAF6EE !important;
+}
+
+.dark nav[role="navigation"] .absolute button:hover {
+  background: rgba(255, 107, 26, 0.15) !important;
+  color: #FF6B1A !important;
+}
+
+/* Profile menu and inputs */
+.dark .cyber-input, .dark input, .dark select, .dark textarea {
+  background: #171B2A !important;
+  border-color: #1E293B !important;
+  color: #FAF6EE !important;
+}
+
+.dark .bg-slate-50, .dark .bg-slate-100 {
+  background-color: #171B2A !important;
+}
+
+.dark .bg-white,
+.dark .bg-white\/80,
+.dark .bg-white\/95,
+.dark .bg-white\/90 {
+  background-color: #111422 !important;
+  color: #FAF6EE !important;
+}
+
+.dark .bg-\[\#FAF6EE\]\/90 {
+  background-color: rgba(11, 14, 20, 0.9) !important;
+}
+
+.dark .bg-\[\#FAF6EE\]\/95 {
+  background-color: rgba(11, 14, 20, 0.95) !important;
+}
+
+.dark .text-\[\#171C38\],
+.dark .text-\[\#171C38\]\/80 {
+  color: #FAF6EE !important;
+}
+
+.dark .text-\[\#171C38\]\/70 {
+  color: rgba(250, 246, 238, 0.7) !important;
+}
+
+.dark .text-\[\#171C38\]\/60 {
+  color: rgba(250, 246, 238, 0.6) !important;
+}
+
+.dark .text-\[\#171C38\]\/50 {
+  color: rgba(250, 246, 238, 0.5) !important;
+}
+
+.dark .text-\[\#171C38\]\/85 {
+  color: rgba(250, 246, 238, 0.85) !important;
+}
+
+.dark .bg-\[\#171C38\]\/5 {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark .border-\[\#171C38\] {
+  border-color: #0B0E14 !important;
+}
+
+.dark .text-\[\#6F7178\] {
+  color: #94A3B8 !important;
+}
+
+.dark .border-\[\#E8E8E8\] {
+  border-color: #1E293B !important;
+}
+
+/* Overrides for glass-morphic classes */
+.dark .glass-card {
+  background: rgba(17, 20, 34, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+  color: #FAF6EE !important;
+}
+
+.dark .glass-card:hover {
+  border-color: rgba(255, 107, 26, 0.4) !important;
+  box-shadow: 0 15px 40px 0 rgba(255, 107, 26, 0.15) !important;
+}
+
+.dark .glass-panel {
+  background: rgba(17, 20, 34, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+  color: #FAF6EE !important;
+}
+
+.dark .glass-header {
+  background: rgba(11, 14, 20, 0.85) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Mobile header dark overrides */
+.dark header.lg\:hidden {
+  background-color: rgba(11, 14, 20, 0.95) !important;
+  border-bottom-color: #1E293B !important;
+}
+
+.dark header.lg\:hidden button {
+  color: #FAF6EE !important;
+}
+
+/* Leaflet Dark mode filter */
+.dark .leaflet-container {
+  background: #0B0E14 !important;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background: rgba(17, 20, 34, 0.95) !important;
+  color: #FAF6EE !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .leaflet-popup-tip {
+  background: rgba(17, 20, 34, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .leaflet-control-zoom-in, .dark .leaflet-control-zoom-out {
+  background: rgba(17, 20, 34, 0.9) !important;
+  color: #FF6B1A !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+
 .text-glow-cyan {
   text-shadow: 0 0 8px rgba(255, 107, 26, 0.25), 0 0 20px rgba(255, 107, 26, 0.05);
 }
@@ -279,7 +445,7 @@ body {
     padding: 0 !important;
   }
   
-  header, footer, nav, aside, 
+  header, footer, nav, aside, canvas,
   .no-print, button, .btn-primary, .btn-secondary, 
   [role="navigation"], #root > header, #root > footer, #root > nav {
     display: none !important;
@@ -291,6 +457,12 @@ body {
     padding: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
+  }
+
+  /* Force background colors and gradients to print for the digital card */
+  #printable-card-area * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   /* Force light background and clean borders on glass cards */

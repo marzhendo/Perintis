@@ -1,5 +1,5 @@
 from __future__ import annotations
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..dependencies.auth import get_current_user_optional
@@ -77,3 +77,26 @@ def copywriter(request: Request, req: CopywriterRequest):
     Falls back to a string-interpolation template if Gemini fails.
     """
     return generate_copy(req)
+
+
+@router.post("/cron/update-prices")
+def cron_update_prices(x_cron_key: str | None = Header(None), db: Session = Depends(get_db)):
+    import os
+    from ..services.pihps_service import update_prices
+    
+    cron_secret = os.getenv("CRON_SECRET_KEY", "perintis-cron-secret-2026")
+    if x_cron_key != cron_secret:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized: Invalid cron secret key"
+        )
+    try:
+        update_prices()
+        from ..services.commodity_service import invalidate_commodity_cache
+        invalidate_commodity_cache()
+        return {"message": "Prices updated successfully"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update prices: {str(e)}"
+        )

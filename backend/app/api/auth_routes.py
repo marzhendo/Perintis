@@ -75,31 +75,125 @@ def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db), 
 @router.post("/forgot-password")
 @limiter.limit("5/minute")
 def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    from datetime import datetime, timedelta, timezone
+    from ..models.otp_verification import OTPVerification
+
     user = auth_service.get_user_by_email(db, data.email)
     if not user:
         raise HTTPException(
             status_code=404,
             detail="Email tidak terdaftar."
         )
-    return {"message": "Kode verifikasi reset password telah dikirim ke email Anda.", "demo_code": "123456"}
+    
+    # 1. Prevent flooding: Check if an active OTP was recently generated (less than 60 seconds ago)
+    recent_otp = db.query(OTPVerification).filter(
+        OTPVerification.email == data.email,
+        OTPVerification.purpose == "reset_password",
+        OTPVerification.created_at > datetime.now(timezone.utc) - timedelta(seconds=60)
+    ).first()
+    if recent_otp:
+        raise HTTPException(
+            status_code=429,
+            detail="Minta kirim ulang terlalu cepat. Silakan tunggu 60 detik sebelum meminta kode baru."
+        )
+    
+    # 2. Generate 6-digit numeric OTP code
+    import secrets
+    otp_code = "".join(secrets.choice("0123456789") for _ in range(6))
+    
+    # 3. Save OTP to DB
+    # Clean up old OTPs for this email to keep DB clean
+    db.query(OTPVerification).filter(
+        OTPVerification.email == data.email,
+        OTPVerification.purpose == "reset_password"
+    ).delete()
+    
+    otp_record = OTPVerification(
+        email=data.email,
+        code=otp_code,
+        purpose="reset_password",
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=5)  # OTP valid for 5 minutes
+    )
+    db.add(otp_record)
+    db.commit()
+    
+    # 4. Send OTP email
+    from ..services.email_service import send_otp_email
+    send_otp_email(data.email, otp_code, "reset_password")
+    
+    # If SMTP is not configured, we return the code in the response as demo_code for dev convenience
+    from ..core.config import config
+    response_data = {"message": "Kode verifikasi reset password telah dikirim ke email Anda."}
+    if not all([config.SMTP_HOST, config.SMTP_USER, config.SMTP_PASSWORD]):
+        response_data["demo_code"] = otp_code
+        
+    return response_data
 
 
 @router.post("/reset-password")
 @limiter.limit("5/minute")
 def reset_password(request: Request, data: ResetPasswordRequest, db: Session = Depends(get_db)):
-    if data.code != "123456":
+    from datetime import datetime, timezone
+    from ..models.otp_verification import OTPVerification
+    
+    # 1. Find the latest active OTP record for this email
+    otp_record = db.query(OTPVerification).filter(
+        OTPVerification.email == data.email,
+        OTPVerification.purpose == "reset_password",
+        OTPVerification.is_verified == False,
+        OTPVerification.expires_at > datetime.now(timezone.utc)
+    ).order_by(OTPVerification.created_at.desc()).first()
+    
+    if not otp_record:
         raise HTTPException(
             status_code=400,
-            detail="Kode verifikasi tidak valid."
+            detail="Tidak ada kode verifikasi aktif untuk email ini. Silakan minta kode baru."
         )
+    
+    # 2. Check if this OTP has already been blocked due to brute force attempts
+    if otp_record.failed_attempts >= 3:
+        otp_record.is_verified = True
+        db.commit()
+        raise HTTPException(
+            status_code=400,
+            detail="Kode verifikasi telah diblokir karena terlalu banyak percobaan salah. Silakan minta kode baru."
+        )
+    
+    # 3. Check if the provided code matches
+    if otp_record.code != data.code:
+        # Increment failed attempts
+        otp_record.failed_attempts += 1
+        db.commit()
+        
+        remaining = 3 - otp_record.failed_attempts
+        if remaining <= 0:
+            otp_record.is_verified = True
+            db.commit()
+            raise HTTPException(
+                status_code=400,
+                detail="Kode verifikasi telah diblokir karena terlalu banyak percobaan salah. Silakan minta kode baru."
+            )
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Kode verifikasi salah. Sisa percobaan: {remaining} kali."
+            )
+    
+    # 4. Mark OTP as verified/used
+    otp_record.is_verified = True
+    db.commit()
+    
+    # 5. Update User Password
     user = auth_service.get_user_by_email(db, data.email)
     if not user:
         raise HTTPException(
             status_code=404,
-            detail="Email tidak ditemukan."
+            detail="User dengan email tersebut tidak ditemukan."
         )
+    
     user.password_hash = auth_service.hash_password(data.new_password)
     db.commit()
+    
     return {"message": "Password berhasil diperbarui. Silakan masuk dengan password baru Anda."}
 
 

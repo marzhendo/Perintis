@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { Search, Crosshair, Navigation, ChevronLeft, Building } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { Search, Crosshair, Navigation, ChevronLeft, Building, Plus, X } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { getProvinsi, getKabupaten, getKecamatan, getKelurahan, provinsiIdFromLatLng, getAddressFromLatLng, findBestMatch } from '../services/areaService';
@@ -21,8 +21,24 @@ const userIcon = L.divIcon({
 
 const umkmIcon = L.divIcon({
   className: '',
-  html: '<div style="width:14px;height:14px;background:#171C38;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>',
-  iconSize: [14, 14], iconAnchor: [7, 7],
+  html: `
+    <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px;">
+      <div style="position: absolute; bottom: 0; width: 30px; height: 30px; background: #FF6B1A; border: 2.5px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 2px 6px rgba(0,0,0,0.35);"></div>
+      <div style="position: absolute; top: 6px; width: 10px; height: 10px; background: #171C38; border-radius: 50%; z-index: 2;"></div>
+    </div>
+  `,
+  iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -30],
+});
+
+const myUmkmIcon = L.divIcon({
+  className: '',
+  html: `
+    <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px;">
+      <div style="position: absolute; bottom: 0; width: 30px; height: 30px; background: #10B981; border: 2.5px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 2px 6px rgba(0,0,0,0.35);"></div>
+      <div style="position: absolute; top: 6px; width: 10px; height: 10px; background: #171C38; border-radius: 50%; z-index: 2;"></div>
+    </div>
+  `,
+  iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -30],
 });
 
 function MapController({ center, zoom }) {
@@ -35,22 +51,127 @@ function MapController({ center, zoom }) {
   return null;
 }
 
+const getOptimizedImgUrl = (url) => {
+  if (!url) return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=240&q=70&fm=webp';
+  if (url.includes('unsplash.com')) {
+    // Replace width/quality queries and enforce WebP format for fast loads
+    return url.replace(/w=\d+/, 'w=240').replace(/q=\d+/, 'q=70') + '&fm=webp';
+  }
+  return url;
+};
+
 const UMKM_LOCATIONS = [
-  { name: 'Warung Seger Abah', city: 'Jakarta', type: 'Kuliner', lat: -6.2088, lng: 106.8456, products: 'Nasi Uduk, Lauk' },
-  { name: 'Kedai Kopi Nusantara', city: 'Bandung', type: 'Kuliner', lat: -6.9175, lng: 107.6191, products: 'Kopi, Snack' },
-  { name: 'Roti & Kue Bu Asri', city: 'Semarang', type: 'Kuliner', lat: -7.0051, lng: 110.4381, products: 'Roti, Kue Basah' },
-  { name: 'Batiki Craft', city: 'Surabaya', type: 'Kerajinan', lat: -7.2575, lng: 112.7521, products: 'Batik, Aksesoris' },
-  { name: 'Abon & Kriuk Mak Nani', city: 'Medan', type: 'Kuliner', lat: 3.5952, lng: 98.6722, products: 'Abon, Peyek' },
-  { name: 'Kain Tenun Lontara', city: 'Makassar', type: 'Kerajinan', lat: -5.1477, lng: 119.4327, products: 'Tenun, Sarung' },
-  { name: 'Jamu Gendong Mbah Ti', city: 'Solo', type: 'Minuman', lat: -7.5667, lng: 110.8281, products: 'Jamu, Wedang' },
-  { name: 'Tas & Dompet Ecoprint', city: 'Malang', type: 'Kerajinan', lat: -7.9797, lng: 112.6304, products: 'Tas, Dompet' },
-  { name: 'Sambal Ijo Mak Ita', city: 'Denpasar', type: 'Kuliner', lat: -8.3405, lng: 115.0920, products: 'Sambal, Bumbu' },
-  { name: 'Kripik Pisang Lembayung', city: 'Pontianak', type: 'Kuliner', lat: -0.0220, lng: 109.3303, products: 'Keripik, Olahan' },
-  { name: 'Es Cendol Betawi H. Dul', city: 'Bogor', type: 'Minuman', lat: -6.5971, lng: 106.8060, products: 'Cendol, Es Campur' },
-  { name: 'Pengolahan Ikan Asap Yanti', city: 'Cirebon', type: 'Kuliner', lat: -6.7320, lng: 108.5523, products: 'Ikan Asap, Teri' },
-  { name: 'Dodol & Wajik Nyak Halimah', city: 'Palembang', type: 'Kuliner', lat: -2.9761, lng: 104.7754, products: 'Dodol, Wajik' },
-  { name: 'Gerabah Lestari', city: 'Yogyakarta', type: 'Kerajinan', lat: -7.7956, lng: 110.3695, products: 'Gerabah, Keramik' },
-  { name: 'Kue Basah & Jajan Pasar Mbah Karto', city: 'Magelang', type: 'Kuliner', lat: -7.4797, lng: 110.2177, products: 'Kue Lupis, Klepon' },
+  // Banyumas / Purwokerto area (matching user's view)
+  {
+    name: 'Gethuk Goreng Sokaraja H. Tohirin',
+    city: 'Banyumas',
+    type: 'Kuliner',
+    lat: -7.4475,
+    lng: 109.2891,
+    products: 'Gethuk Goreng Manis',
+    rating: '4.9',
+    reviews: '1,840',
+    address: 'Jl. Jenderal Soedirman No. 15, Sokaraja, Banyumas',
+    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    name: 'Mendoan Sawangan Purwokerto',
+    city: 'Purwokerto',
+    type: 'Kuliner',
+    lat: -7.4244,
+    lng: 109.2301,
+    products: 'Tempe Mendoan Hangat',
+    rating: '4.8',
+    reviews: '920',
+    address: 'Jl. Jenderal Soedirman No. 24, Purwokerto',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    name: 'Batik Banyumasan Hadipriyanto',
+    city: 'Purwokerto',
+    type: 'Kerajinan',
+    lat: -7.4325,
+    lng: 109.2394,
+    products: 'Batik Tulis & Cap Banyumasan',
+    rating: '4.7',
+    reviews: '156',
+    address: 'Jl. KH. Wahid Hasyim No. 10, Purwokerto',
+    image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    name: 'Kripik Tempe Swanhild',
+    city: 'Purwokerto',
+    type: 'Kuliner',
+    lat: -7.4189,
+    lng: 109.2452,
+    products: 'Kripik Tempe Garing',
+    rating: '4.6',
+    reviews: '312',
+    address: 'Jl. Sawangan No. 45, Purwokerto',
+    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    name: 'Kopi Karanglewas',
+    city: 'Banyumas',
+    type: 'Minuman',
+    lat: -7.4150,
+    lng: 109.2050,
+    products: 'Kopi Robusta & Arabika Lokal',
+    rating: '4.5',
+    reviews: '98',
+    address: 'Jl. Raya Karanglewas No. 8, Banyumas',
+    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80'
+  },
+  
+  // General Indonesia locations
+  {
+    name: 'Warung Seger Abah',
+    city: 'Jakarta',
+    type: 'Kuliner',
+    lat: -6.2088,
+    lng: 106.8456,
+    products: 'Nasi Uduk, Lauk Pauk',
+    rating: '4.8',
+    reviews: '124',
+    address: 'Jl. Salemba Tengah No. 12, Jakarta Pusat',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    name: 'Kedai Kopi Nusantara',
+    city: 'Bandung',
+    type: 'Kuliner',
+    lat: -6.9175,
+    lng: 107.6191,
+    products: 'Kopi Espresso, Roti Bakar',
+    rating: '4.7',
+    reviews: '85',
+    address: 'Jl. Dago No. 102, Bandung',
+    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    name: 'Roti & Kue Bu Asri',
+    city: 'Semarang',
+    type: 'Kuliner',
+    lat: -7.0051,
+    lng: 110.4381,
+    products: 'Roti, Kue Basah',
+    rating: '4.5',
+    reviews: '64',
+    address: 'Jl. Pandanaran No. 56, Semarang',
+    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    name: 'Batiki Craft',
+    city: 'Surabaya',
+    type: 'Kerajinan',
+    lat: -7.2575,
+    lng: 112.7521,
+    products: 'Batik, Aksesoris',
+    rating: '4.6',
+    reviews: '78',
+    address: 'Jl. Tunjungan No. 12, Surabaya',
+    image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80'
+  },
 ];
 
 export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
@@ -77,6 +198,37 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
   const [radius, setRadius] = useState('1 km');
   const [scoreResult, setScoreResult] = useState(null);
   const [scoreLoading, setScoreLoading] = useState(false);
+  const [mapType, setMapType] = useState('roadmap'); // 'roadmap' | 'satellite'
+
+  // Custom User Registered Business States
+  const [customLocations, setCustomLocations] = useState([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newBiz, setNewBiz] = useState({
+    name: '',
+    type: 'Kuliner',
+    products: '',
+    address: '',
+    lat: '',
+    lng: '',
+    rating: '5.0',
+    reviews: '1'
+  });
+
+  // Map Search & Filter States
+  const [mapSearchQuery, setMapSearchQuery] = useState('');
+  const [mapSearchLoading, setMapSearchLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('Semua');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('perintis_custom_umkm');
+    if (saved) {
+      try {
+        setCustomLocations(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     getProvinsi().then(list => {
@@ -97,6 +249,20 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
       console.error('Error geocoding address:', error);
     }
     return null;
+  };
+
+  const handleMapSearch = async (e) => {
+    e.preventDefault();
+    if (!mapSearchQuery.trim()) return;
+    setMapSearchLoading(true);
+    const coords = await geocodeAddress(mapSearchQuery);
+    setMapSearchLoading(false);
+    if (coords) {
+      setMapCenter([coords.lat, coords.lng]);
+      setMapZoom(13);
+    } else {
+      alert(`Lokasi "${mapSearchQuery}" tidak ditemukan.`);
+    }
   };
 
   const handleLocate = useCallback(async () => {
@@ -441,8 +607,89 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
     return parts.join(' › ');
   };
 
+  const handleAddBusiness = (e) => {
+    e.preventDefault();
+    if (!newBiz.name || !newBiz.lat || !newBiz.lng || !newBiz.products) {
+      alert("Harap isi seluruh field formulir termasuk titik koordinat di peta.");
+      return;
+    }
+    
+    let categoryImage = 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80'; // Culinary default
+    if (newBiz.type === 'Minuman') {
+      categoryImage = 'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?auto=format&fit=crop&w=400&q=80';
+    } else if (newBiz.type === 'Kerajinan') {
+      categoryImage = 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80';
+    } else if (newBiz.type === 'Jasa') {
+      categoryImage = 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80';
+    }
+    
+    const bizRecord = {
+      ...newBiz,
+      lat: parseFloat(newBiz.lat),
+      lng: parseFloat(newBiz.lng),
+      image: categoryImage,
+      isUserCreated: true
+    };
+    
+    const updated = [...customLocations, bizRecord];
+    setCustomLocations(updated);
+    localStorage.setItem('perintis_custom_umkm', JSON.stringify(updated));
+    
+    setNewBiz({
+      name: '',
+      type: 'Kuliner',
+      products: '',
+      address: '',
+      lat: '',
+      lng: '',
+      rating: '5.0',
+      reviews: '1'
+    });
+    setIsAddModalOpen(false);
+  };
+
+  function MapClickHandler() {
+    useMapEvents({
+      click: (e) => {
+        if (isAddModalOpen) {
+          setNewBiz(prev => ({
+            ...prev,
+            lat: e.latlng.lat.toFixed(6),
+            lng: e.latlng.lng.toFixed(6)
+          }));
+        }
+      }
+    });
+    return null;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in text-left">
+      <style>{`
+        .leaflet-popup-content-wrapper {
+          background: #171C38 !important;
+          color: #FAF6EE !important;
+          border-radius: 16px !important;
+          padding: 0 !important;
+          overflow: hidden;
+          border: 1.5px solid rgba(255, 107, 26, 0.3) !important;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4) !important;
+        }
+        .leaflet-popup-content {
+          margin: 0 !important;
+          width: 240px !important;
+        }
+        .leaflet-popup-tip {
+          background: #171C38 !important;
+          border: 1px solid rgba(255, 107, 26, 0.3) !important;
+        }
+        .leaflet-container a.leaflet-popup-close-button {
+          color: #FAF6EE !important;
+          padding: 8px 8px 0 0 !important;
+          font-size: 16px !important;
+          z-index: 10;
+        }
+      `}</style>
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-extrabold text-[#171C38] tracking-tight">Peta Lokasi & Pasar Daerah</h2>
@@ -458,6 +705,13 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
           {getBreadcrumb() && <p className="text-[10px] text-[#6F7178] mt-0.5">{getBreadcrumb()}</p>}
         </div>
         <div className="flex gap-2 flex-wrap">
+          <button 
+            type="button"
+            onClick={() => setIsAddModalOpen(true)} 
+            className="px-4 py-2 rounded-xl text-xs font-extrabold bg-white border border-[#FF6B1A]/35 text-[#FF6B1A] hover:bg-[#FF6B1A]/5 transition-all press flex items-center gap-1.5"
+          >
+            <Plus className="w-4 h-4" />Daftarkan Usaha
+          </button>
           <button onClick={handleLocate} className="px-4 py-2 rounded-xl text-xs font-bold bg-white border border-[#E8E8E8] text-[#6F7178] hover:text-[#FF6B1A] hover:border-[#FF6B1A]/30 transition-all press" title="Deteksi lokasi saya">
             <Crosshair className="w-4 h-4 inline mr-1" />Lokasi Saya
           </button>
@@ -471,10 +725,84 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
       {viewMode === 'map' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8">
-            <div className="glass-card rounded-[20px] p-1 overflow-hidden shadow-lg shadow-orange-500/5 w-full border-2 border-[#171C38]">
+            <div className="glass-card rounded-[20px] p-1 overflow-hidden shadow-lg shadow-orange-500/5 w-full border-2 border-[#171C38] relative">
+              {/* Map Address Search Bar */}
+              <form onSubmit={handleMapSearch} className="absolute top-4 left-4 z-[1000] flex items-center gap-1 bg-white/95 backdrop-blur-md border border-[#E8E8E8] hover:border-[#FF6B1A]/40 rounded-xl p-1 shadow-lg max-w-[280px] sm:max-w-[340px] transition-all">
+                <input
+                  type="text"
+                  placeholder="Cari lokasi/alamat..."
+                  value={mapSearchQuery}
+                  onChange={(e) => setMapSearchQuery(e.target.value)}
+                  className="px-3 py-1.5 bg-transparent border-none text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178]/60 outline-none w-40 sm:w-52"
+                />
+                <button
+                  type="submit"
+                  disabled={mapSearchLoading}
+                  className="p-1.5 rounded-lg bg-[#FF6B1A] text-white hover:bg-[#e05615] transition-all press disabled:opacity-50 flex items-center justify-center"
+                >
+                  {mapSearchLoading ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Search className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </form>
+
+              {/* Map Type Switcher (Peta / Satelit ala Google Maps) */}
+              <div className="absolute top-4 right-4 z-[1000] flex bg-[#171C38]/90 backdrop-blur-md border border-[#FF6B1A]/30 rounded-xl p-0.5 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => setMapType('roadmap')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold transition-all duration-300 press-sm ${
+                    mapType === 'roadmap'
+                      ? 'bg-[#FF6B1A] text-white shadow-sm'
+                      : 'text-[#FAF6EE]/80 hover:text-white'
+                  }`}
+                >
+                  Peta
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMapType('satellite')}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold transition-all duration-300 press-sm ${
+                    mapType === 'satellite'
+                      ? 'bg-[#FF6B1A] text-white shadow-sm'
+                      : 'text-[#FAF6EE]/80 hover:text-white'
+                  }`}
+                >
+                  Satelit
+                </button>
+              </div>
+
+              {/* Map Filter Categories (Floating Bottom Center) */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] flex gap-1 bg-[#171C38]/90 backdrop-blur-md border border-[#FF6B1A]/30 rounded-2xl p-1 shadow-lg overflow-x-auto max-w-[90%] scrollbar-none">
+                {['Semua', 'Kuliner', 'Minuman', 'Kerajinan', 'Jasa', 'Usaha Saya'].map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-extrabold transition-all duration-300 whitespace-nowrap ${
+                      selectedCategory === cat
+                        ? 'bg-[#FF6B1A] text-white shadow-sm'
+                        : 'text-[#FAF6EE]/80 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
               <MapContainer center={mapCenter} zoom={mapZoom} className="h-[400px] md:h-[500px] w-full rounded-[18px]" scrollWheelZoom={true}>
-                <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>' url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+                <TileLayer 
+                  attribution='&copy; <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer">Google Maps</a>' 
+                  url={mapType === 'roadmap' 
+                    ? "https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" 
+                    : "https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
+                  }
+                  subdomains={['mt0','mt1','mt2','mt3']}
+                />
                 <MapController center={mapCenter} zoom={mapZoom} />
+                <MapClickHandler />
                 {userLocation && (
                   <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
                     <Popup>
@@ -485,17 +813,72 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
                     </Popup>
                   </Marker>
                 )}
-                {UMKM_LOCATIONS.map((umkm, i) => (
-                  <Marker key={i} position={[umkm.lat, umkm.lng]} icon={umkmIcon}>
-                    <Popup>
-                      <div className="text-xs text-left">
-                        <strong className="text-[#171C38]">{umkm.name}</strong><br />
-                        <span className="text-[#6F7178] font-semibold">{umkm.city} • {umkm.type}</span><br />
-                        <span className="text-[#FF6B1A] font-bold">{umkm.products}</span>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
+                {[...UMKM_LOCATIONS, ...customLocations]
+                  .filter(umkm => {
+                    if (selectedCategory === 'Semua') return true;
+                    if (selectedCategory === 'Usaha Saya') return umkm.isUserCreated;
+                    return umkm.type.toLowerCase().includes(selectedCategory.toLowerCase());
+                  })
+                  .map((umkm, i) => {
+                    const isUserBiz = umkm.isUserCreated;
+                    return (
+                      <Marker key={i} position={[umkm.lat, umkm.lng]} icon={isUserBiz ? myUmkmIcon : umkmIcon}>
+                        <Popup>
+                          <div className="flex flex-col w-[240px] font-sans">
+                            <img 
+                              src={getOptimizedImgUrl(umkm.image)} 
+                              alt={umkm.name} 
+                              className="w-full h-28 object-cover rounded-t-[14px]" 
+                              loading="lazy"
+                              onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=240&q=70&fm=webp' }}
+                            />
+                            <div className="p-3 flex flex-col gap-1.5 bg-[#171C38]">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-md uppercase tracking-wider ${
+                                  isUserBiz ? 'bg-emerald-500/15 text-emerald-400' : 'bg-[#FF6B1A]/15 text-[#FF6B1A]'
+                                }`}>
+                                  {umkm.type}
+                                </span>
+                                {isUserBiz && (
+                                  <span className="px-2 py-0.5 bg-[#10B981] text-slate-950 text-[9px] font-extrabold rounded-md uppercase tracking-wider">
+                                    Usaha Terdaftar
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <h4 className="font-extrabold text-sm text-[#FAF6EE] leading-tight">
+                                {umkm.name}
+                              </h4>
+                              
+                              <div className="flex items-center gap-1 text-[10px] text-amber-400 font-bold">
+                                <span>⭐ {umkm.rating}</span>
+                                <span className="text-[#6F7178] font-semibold">({umkm.reviews} ulasan)</span>
+                              </div>
+                              
+                              <p className="text-[10px] text-[#FAF6EE]/70 font-semibold leading-relaxed mt-0.5">
+                                🛍️ <span className="text-[#FF6B1A] font-bold">{umkm.products}</span>
+                              </p>
+                              
+                              <p className="text-[9px] text-[#6F7178] font-medium leading-tight">
+                                📍 {umkm.address}
+                              </p>
+                              
+                              <div className="flex gap-2 mt-2.5 pt-2 border-t border-white/5">
+                                <a 
+                                  href={`https://www.google.com/maps/search/?api=1&query=${umkm.lat},${umkm.lng}`}
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex-1 py-1.5 px-2 bg-[#FF6B1A] text-white text-[10px] font-bold rounded-lg hover:bg-[#e05615] transition-all text-center"
+                                >
+                                  Petunjuk Rute
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
               </MapContainer>
             </div>
           </div>
@@ -795,27 +1178,72 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
         </div>
       ) : (
         <div className="bg-white rounded-[20px] border border-[#E8E8E8] shadow-sm p-6 overflow-hidden">
+          <div className="flex justify-between items-center mb-4 text-left">
+            <div>
+              <h3 className="text-sm font-bold text-[#171C38] font-sans">Daftar UMKM & Tempat Usaha Terdaftar</h3>
+              <p className="text-[10px] text-[#6F7178] mt-0.5">Daftar pelaku usaha mikro yang terdaftar di sistem pemetaan wilayah Perintis.</p>
+            </div>
+            <span className="px-2.5 py-1 bg-[#FF6B1A]/10 text-[#FF6B1A] text-[10px] font-extrabold rounded-lg">
+              Total: {[...UMKM_LOCATIONS, ...customLocations].length} Usaha
+            </span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#E8E8E8]">
-                  <th className="py-3 px-3 text-[10px] font-bold text-[#6F7178] uppercase tracking-wider">Provinsi</th>
-                  <th className="py-3 px-3 text-[10px] font-bold text-[#6F7178] uppercase tracking-wider">Kab/Kota</th>
-                  <th className="py-3 px-3 text-[10px] font-bold text-[#6F7178] uppercase tracking-wider">Kecamatan</th>
-                  <th className="py-3 px-3 text-[10px] font-bold text-[#6F7178] uppercase tracking-wider">Desa</th>
+                <tr className="border-b border-[#E8E8E8] bg-slate-50/50">
+                  <th className="py-3 px-3 text-[10px] font-extrabold text-[#6F7178] uppercase tracking-wider">Nama Usaha</th>
+                  <th className="py-3 px-3 text-[10px] font-extrabold text-[#6F7178] uppercase tracking-wider">Kategori</th>
+                  <th className="py-3 px-3 text-[10px] font-extrabold text-[#6F7178] uppercase tracking-wider">Produk Unggulan</th>
+                  <th className="py-3 px-3 text-[10px] font-extrabold text-[#6F7178] uppercase tracking-wider">Alamat</th>
+                  <th className="py-3 px-3 text-[10px] font-extrabold text-[#6F7178] uppercase tracking-wider">Rating</th>
+                  <th className="py-3 px-3 text-[10px] font-extrabold text-[#6F7178] uppercase tracking-wider text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="text-xs text-[#171C38] divide-y divide-[#E8E8E8]/50">
-                {loading ? (
-                  <tr><td colSpan="4" className="py-8 text-center text-[#6F7178]">Memuat data...</td></tr>
-                ) : filteredProvinsi.map(p => (
-                  <tr key={p.id} className="hover:bg-[#F8ECD2]/30 transition-colors">
-                    <td className="py-3 px-3 font-bold">{p.nama}</td>
-                    <td className="py-3 px-3 text-[#6F7178]">-</td>
-                    <td className="py-3 px-3 text-[#6F7178]">-</td>
-                    <td className="py-3 px-3 text-[#6F7178]">-</td>
-                  </tr>
-                ))}
+                {[...UMKM_LOCATIONS, ...customLocations].map((umkm, idx) => {
+                  const isUserBiz = umkm.isUserCreated;
+                  return (
+                    <tr key={idx} className="hover:bg-[#F8ECD2]/30 transition-colors">
+                      <td className="py-3.5 px-3 font-bold">
+                        <div className="flex items-center gap-1.5">
+                          <span>{umkm.name}</span>
+                          {isUserBiz && (
+                            <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-600 text-[8px] font-extrabold rounded uppercase tracking-wider">
+                              Usaha Saya
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-md uppercase tracking-wider ${
+                          isUserBiz ? 'bg-emerald-500/15 text-emerald-500' : 'bg-[#FF6B1A]/15 text-[#FF6B1A]'
+                        }`}>
+                          {umkm.type}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 text-[#6F7178] font-medium">{umkm.products}</td>
+                      <td className="py-3.5 px-3 text-[#6F7178] font-medium max-w-[200px] truncate" title={umkm.address}>
+                        {umkm.address}
+                      </td>
+                      <td className="py-3.5 px-3 font-bold text-amber-500">
+                        ⭐ {umkm.rating} <span className="text-[#6F7178] font-normal text-[10px]">({umkm.reviews})</span>
+                      </td>
+                      <td className="py-3.5 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMapCenter([umkm.lat, umkm.lng]);
+                            setMapZoom(16);
+                            setViewMode('map');
+                          }}
+                          className="px-3 py-1.5 bg-[#FF6B1A]/10 text-[#FF6B1A] hover:bg-[#FF6B1A] hover:text-white transition-all text-[10px] font-bold rounded-lg"
+                        >
+                          Lihat di Peta
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -840,6 +1268,134 @@ export default function LokasiPasar({ setSelectedRegion, onNavigate }) {
           <p className="text-xs text-[#6F7178] font-medium">{kelurahanList.length ? 'Desa/Kelurahan' : 'Lokasi Terdeteksi'}</p>
         </div>
       </section>
+
+      {/* Modal Daftar Usaha Baru */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-white rounded-[24px] p-6 shadow-[0_8px_32px_rgba(23,28,56,0.12)] animate-scale-in text-left">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3.5 mb-4">
+              <h3 className="text-lg font-extrabold text-[#171C38] flex items-center gap-2">
+                <Building className="w-5 h-5 text-[#FF6B1A]" />
+                Daftarkan Usaha Baru
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => setIsAddModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-[#171C38]/5 text-[#6F7178] hover:text-[#171C38] transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleAddBusiness} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-[#6F7178] uppercase tracking-wider mb-1.5">Nama Usaha</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="Contoh: Warmindo Berkah" 
+                  value={newBiz.name}
+                  onChange={(e) => setNewBiz(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full p-3 bg-white border border-[#E8E8E8] rounded-xl text-sm text-[#171C38] placeholder:text-[#6F7178]/50 focus:border-[#FF6B1A] outline-none transition-all shadow-sm"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#6F7178] uppercase tracking-wider mb-1.5">Kategori</label>
+                  <select 
+                    value={newBiz.type}
+                    onChange={(e) => setNewBiz(prev => ({ ...prev, type: e.target.value }))}
+                    className="w-full p-3 bg-white border border-[#E8E8E8] rounded-xl text-sm text-[#171C38] focus:border-[#FF6B1A] outline-none transition-all shadow-sm"
+                  >
+                    <option value="Kuliner">Kuliner</option>
+                    <option value="Minuman">Minuman</option>
+                    <option value="Kerajinan">Kerajinan</option>
+                    <option value="Jasa">Jasa</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#6F7178] uppercase tracking-wider mb-1.5">Produk Unggulan</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Contoh: Mie, Kopi" 
+                    value={newBiz.products}
+                    onChange={(e) => setNewBiz(prev => ({ ...prev, products: e.target.value }))}
+                    className="w-full p-3 bg-white border border-[#E8E8E8] rounded-xl text-sm text-[#171C38] placeholder:text-[#6F7178]/50 focus:border-[#FF6B1A] outline-none transition-all shadow-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#6F7178] uppercase tracking-wider mb-1.5">Alamat Lengkap</label>
+                <textarea 
+                  required
+                  rows={2}
+                  placeholder="Jl. Kampus No. 12, Purwokerto" 
+                  value={newBiz.address}
+                  onChange={(e) => setNewBiz(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full p-3 bg-white border border-[#E8E8E8] rounded-xl text-sm text-[#171C38] placeholder:text-[#6F7178]/50 focus:border-[#FF6B1A] outline-none transition-all shadow-sm resize-none"
+                />
+              </div>
+
+              <div className="bg-[#FF6B1A]/10 border border-[#FF6B1A]/20 rounded-xl p-3 text-[10px] text-[#FF6B1A] font-bold leading-relaxed">
+                👉 <strong>Cara menentukan koordinat:</strong><br />
+                Klik lokasi mana saja di peta Google Maps untuk langsung mengisi Latitude & Longitude secara otomatis!
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#6F7178] uppercase tracking-wider mb-1.5">Latitude</label>
+                  <input 
+                    type="number" 
+                    step="any"
+                    required
+                    readOnly
+                    placeholder="Pilih di peta" 
+                    value={newBiz.lat}
+                    className="w-full p-3 bg-slate-50 border border-[#E8E8E8] rounded-xl text-sm text-[#171C38]/60 outline-none cursor-not-allowed shadow-inner"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-[#6F7178] uppercase tracking-wider mb-1.5">Longitude</label>
+                  <input 
+                    type="number" 
+                    step="any"
+                    required
+                    readOnly
+                    placeholder="Pilih di peta" 
+                    value={newBiz.lng}
+                    className="w-full p-3 bg-slate-50 border border-[#E8E8E8] rounded-xl text-sm text-[#171C38]/60 outline-none cursor-not-allowed shadow-inner"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-3">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    if (userLocation) {
+                      setNewBiz(prev => ({ ...prev, lat: userLocation.lat.toFixed(6), lng: userLocation.lng.toFixed(6) }));
+                    } else {
+                      alert("Gagal mendeteksi lokasi GPS Anda.");
+                    }
+                  }}
+                  className="flex-1 py-3 bg-slate-50 text-[#171C38] text-xs font-bold rounded-xl hover:bg-slate-100 border border-[#E8E8E8] transition-all text-center"
+                >
+                  Gunakan Lokasi GPS
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-3 bg-[#FF6B1A] text-white text-xs font-extrabold rounded-xl hover:bg-[#e05615] transition-all text-center shadow-md shadow-orange-500/10"
+                >
+                  Daftarkan Usaha
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

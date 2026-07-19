@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, ChevronDown, Sparkles, Calculator, TrendingUp, Award, Send } from 'lucide-react';
+import { Bell, ChevronDown, Sparkles, Calculator, TrendingUp, Award, Send, Sun, Moon } from 'lucide-react';
 import logo from '../assets/images/Perintis.svg';
 import ProfileMenu from './ProfileMenu';
 
-export default function Header({ activeTab, setActiveTab, user, unreadCount, onOpenAuth, onLogout }) {
+export default function Header({ activeTab, setActiveTab, user, unreadCount, onOpenAuth, onLogout, theme, toggleTheme }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -132,7 +132,15 @@ export default function Header({ activeTab, setActiveTab, user, unreadCount, onO
       </div>
 
       {/* Right side */}
-      <div className="flex items-center justify-end w-1/5 gap-1 relative">
+      <div className="flex items-center justify-end w-1/5 gap-1.5 relative">
+        <button
+          onClick={toggleTheme}
+          className="text-[#171C38]/60 hover:text-[#171C38] hover:bg-[#171C38]/10 rounded-full p-1.5 transition-all cursor-pointer"
+          title={theme === 'light' ? 'Mode Gelap' : 'Mode Terang'}
+        >
+          {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+        </button>
+
         <button
           onClick={() => {
             setActiveTab('notifikasi');

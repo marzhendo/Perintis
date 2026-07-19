@@ -196,6 +196,241 @@ export default function ROIProjections({ calculationData }) {
     };
   };
 
+  const handleDownloadPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Harap izinkan pop-up untuk mengunduh laporan PDF.");
+      return;
+    }
+    
+    const formattedDate = new Date().toLocaleDateString('id-ID', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
+    const rawHTML = `
+      <html>
+        <head>
+          <title>Laporan Proyeksi ROI & Kelayakan Bisnis - Perintis</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap');
+            @page {
+              size: A4;
+              margin: 10mm 15mm;
+            }
+            body {
+              font-family: 'Outfit', sans-serif;
+              color: #171C38;
+              margin: 0;
+              padding: 0;
+              line-height: 1.4;
+              background: #fff;
+              font-size: 11px;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #FF6B1A;
+              padding-bottom: 10px;
+              margin-bottom: 15px;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 18px;
+              color: #171C38;
+              font-weight: 800;
+              letter-spacing: -0.5px;
+            }
+            .header p {
+              margin: 3px 0 0;
+              font-size: 9px;
+              color: #6F7178;
+              font-weight: 600;
+            }
+            .section-title {
+              font-size: 12px;
+              font-weight: 800;
+              color: #171C38;
+              border-bottom: 1.5px solid #E8E8E8;
+              padding-bottom: 4px;
+              margin-top: 15px;
+              margin-bottom: 10px;
+            }
+            .grid {
+              display: grid;
+              grid-template-cols: repeat(3, 1fr);
+              gap: 12px;
+              margin-bottom: 15px;
+            }
+            .card {
+              border: 1px solid #E8E8E8;
+              border-radius: 10px;
+              padding: 10px 12px;
+              background: #fbfbfb !important;
+              box-sizing: border-box;
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .card-title {
+              font-size: 8px;
+              font-weight: 700;
+              color: #6F7178;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 4px;
+            }
+            .card-value {
+              font-size: 14px;
+              font-weight: 800;
+              color: #171C38;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 15px;
+              font-size: 10px;
+            }
+            th, td {
+              border: 1px solid #E8E8E8;
+              padding: 6px 10px;
+              text-align: left;
+            }
+            th {
+              background: #171C38 !important;
+              color: #fff !important;
+              font-weight: 700;
+            }
+            tr:nth-child(even) {
+              background: #fdfdfd !important;
+            }
+            tr {
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+            .badge {
+              display: inline-block;
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-size: 8px;
+              font-weight: 700;
+              text-transform: uppercase;
+              margin-top: 4px;
+            }
+            .badge-primary {
+              background: rgba(255,107,26,0.1) !important;
+              color: #FF6B1A !important;
+            }
+            .footer {
+              text-align: center;
+              font-size: 8px;
+              color: #6F7178;
+              margin-top: 25px;
+              border-top: 1px solid #E8E8E8;
+              padding-top: 8px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>LAPORAN KELAYAKAN INVESTASI & PROYEKSI ROI</h1>
+            <p>Dihasilkan secara otomatis oleh Perintis UMKM — Platform Analisis Kelayakan Usaha</p>
+          </div>
+          
+          <div class="section-title">Ringkasan Finansial Usaha</div>
+          <div class="grid">
+            <div class="card">
+              <div class="card-title">Estimasi Balik Modal</div>
+              <div class="card-value">${exactBepMonth > 0 ? `${exactBepMonth} Bulan` : `${roiMonths} Bulan`}</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Ketahanan Cash Runway</div>
+              <div class="card-value">${runwayMonths} Bulan</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Kebutuhan Modal Awal</div>
+              <div class="card-value">${formatRupiah(capital)}</div>
+            </div>
+          </div>
+
+          <div class="section-title">Detail Biaya & Pendapatan Bulanan</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter Keuangan</th>
+                <th>Nilai Proyeksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Harga Jual per Unit</strong></td>
+                <td>${formatRupiah(sellingPrice)}</td>
+              </tr>
+              <tr>
+                <td><strong>Biaya Bahan Baku per Unit</strong></td>
+                <td>${formatRupiah(materialCost)}</td>
+              </tr>
+              <tr>
+                <td><strong>Target Penjualan per Bulan</strong></td>
+                <td>${salesVolumePerMonth} Unit</td>
+              </tr>
+              <tr>
+                <td><strong>Biaya Operasional Tetap Bulanan</strong></td>
+                <td>${formatRupiah(monthlyOp)}</td>
+              </tr>
+              <tr>
+                <td><strong>Total Pengeluaran Bulanan (Bahan + Operasional)</strong></td>
+                <td>${formatRupiah(monthlyExpense)}</td>
+              </tr>
+              <tr>
+                <td><strong>Estimasi Pendapatan Kotor Bulanan</strong></td>
+                <td><strong>${formatRupiah(monthlyRevenue)}</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Laba Bersih Bulanan</strong></td>
+                <td><strong style="color: #FF6B1A">${formatRupiah(netMonthlyProfit)}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="section-title">Asesmen Skenario Risiko</div>
+          <div class="grid">
+            <div class="card">
+              <div class="card-title">Skenario Optimis</div>
+              <p style="font-size: 10px; margin: 0 0 4px; font-weight: 500; color: #6F7178;">Biaya bahan baku -10%, keuntungan maksimal.</p>
+              <div class="badge badge-primary">Margin: 24%</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Skenario Pesimis</div>
+              <p style="font-size: 10px; margin: 0 0 4px; font-weight: 500; color: #6F7178;">Penurunan omzet 30%, inflasi bahan baku +15%.</p>
+              <div class="badge" style="background: rgba(244,63,94,0.1) !important; color: #F43F5E !important;">Margin: 8%</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Rekomendasi Utama</div>
+              <p style="font-size: 10px; margin: 0; font-weight: 600; color: #6F7178;">Tekan operasional non-dasar di 3 bulan pertama & tabung laba untuk dana darurat minimal 20%.</p>
+            </div>
+          </div>
+
+          <div class="footer">
+            Dokumen ini dibuat pada ${formattedDate}. Hak Cipta &copy; Perintis.
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(rawHTML);
+    printWindow.document.close();
+  };
+
   return (
     <div className="space-y-8 animate-fade-in text-left relative z-10 w-full">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full">
@@ -245,9 +480,13 @@ export default function ROIProjections({ calculationData }) {
           <div className="flex items-end gap-2">
             <span className="text-2xl font-extrabold text-[#171C38] leading-none">{formatRupiah(capital)}</span>
           </div>
-          <button className="mt-4 w-full py-2.5 cyber-btn text-xs flex items-center justify-center gap-1.5 rounded-xl cursor-pointer">
+          <button 
+            type="button"
+            onClick={handleDownloadPDF}
+            className="mt-4 w-full py-2.5 cyber-btn text-xs flex items-center justify-center gap-1.5 rounded-xl cursor-pointer"
+          >
             <Download className="w-3.5 h-3.5" />
-            <span>Download PDF</span>
+            <span>Unduh Laporan PDF</span>
           </button>
         </div>
       </div>

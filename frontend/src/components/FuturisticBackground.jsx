@@ -54,10 +54,11 @@ export default function FuturisticBackground() {
       }
 
       draw() {
+        const isDark = document.documentElement.classList.contains('dark');
         ctx.beginPath();
         const size = this.size + (this.glow ? Math.sin(this.pulse) * 0.8 : 0);
         ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
-        ctx.fillStyle = this.glow ? 'rgba(255, 107, 26, 0.7)' : 'rgba(23, 28, 56, 0.25)';
+        ctx.fillStyle = this.glow ? 'rgba(255, 107, 26, 0.7)' : (isDark ? 'rgba(250, 246, 238, 0.25)' : 'rgba(23, 28, 56, 0.25)');
         if (this.glow) {
           ctx.shadowBlur = 6;
           ctx.shadowColor = '#FF6B1A';
@@ -77,7 +78,8 @@ export default function FuturisticBackground() {
     };
 
     const drawGrid = (offset) => {
-      ctx.strokeStyle = 'rgba(23, 28, 56, 0.015)';
+      const isDark = document.documentElement.classList.contains('dark');
+      ctx.strokeStyle = isDark ? 'rgba(250, 246, 238, 0.025)' : 'rgba(23, 28, 56, 0.015)';
       ctx.lineWidth = 0.5;
       const gridSize = 80;
 
@@ -99,20 +101,21 @@ export default function FuturisticBackground() {
     let gridOffset = 0;
 
     const animate = () => {
-      // Light sand/cream base bg
-      ctx.fillStyle = '#FAF6EE';
+      const isDark = document.documentElement.classList.contains('dark');
+      // Dark / light base bg
+      ctx.fillStyle = isDark ? '#0B0E14' : '#FAF6EE';
       ctx.fillRect(0, 0, width, height);
 
-      // Soft light auroras / glowing gradients
+      // Soft light/dark auroras / glowing gradients
       const gradient1 = ctx.createRadialGradient(width * 0.15, height * 0.2, 50, width * 0.15, height * 0.2, 450);
-      gradient1.addColorStop(0, 'rgba(255, 107, 26, 0.04)');
-      gradient1.addColorStop(1, 'rgba(250, 246, 238, 0)');
+      gradient1.addColorStop(0, isDark ? 'rgba(255, 107, 26, 0.06)' : 'rgba(255, 107, 26, 0.04)');
+      gradient1.addColorStop(1, isDark ? 'rgba(11, 14, 20, 0)' : 'rgba(250, 246, 238, 0)');
       ctx.fillStyle = gradient1;
       ctx.fillRect(0, 0, width, height);
 
       const gradient2 = ctx.createRadialGradient(width * 0.85, height * 0.8, 50, width * 0.85, height * 0.8, 500);
-      gradient2.addColorStop(0, 'rgba(23, 28, 56, 0.02)');
-      gradient2.addColorStop(1, 'rgba(250, 246, 238, 0)');
+      gradient2.addColorStop(0, isDark ? 'rgba(250, 246, 238, 0.02)' : 'rgba(23, 28, 56, 0.02)');
+      gradient2.addColorStop(1, isDark ? 'rgba(11, 14, 20, 0)' : 'rgba(250, 246, 238, 0)');
       ctx.fillStyle = gradient2;
       ctx.fillRect(0, 0, width, height);
 
@@ -136,7 +139,7 @@ export default function FuturisticBackground() {
 
           if (dist < connectionDistance) {
             const alpha = (1 - dist / connectionDistance) * 0.15;
-            ctx.strokeStyle = `rgba(23, 28, 56, ${alpha})`;
+            ctx.strokeStyle = isDark ? `rgba(250, 246, 238, ${alpha})` : `rgba(23, 28, 56, ${alpha})`;
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
