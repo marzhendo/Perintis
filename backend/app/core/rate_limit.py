@@ -9,7 +9,16 @@ class SimpleRateLimiter:
         self.history = defaultdict(list)
 
     def __call__(self, request: Request):
-        client_ip = request.client.host if request.client else "unknown"
+        # Cloud Run uses a reverse proxy load balancer.
+        # We MUST read X-Forwarded-For to get the real client IP,
+        # otherwise request.client.host will be the internal load balancer's IP
+        # which changes frequently between requests.
+        forwarded_for = request.headers.get("x-forwarded-for")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+        else:
+            client_ip = request.client.host if request.client else "unknown"
+            
         now = time.time()
         
         self.history[client_ip] = [ts for ts in self.history[client_ip] if now - ts < self.window_seconds]
