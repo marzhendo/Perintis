@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Request, Header
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -13,6 +14,7 @@ from ..services.trend_service import get_viral_trends
 from ..services.copywriter_service import generate_copy
 from ..core.rate_limit import limiter
 
+logger = logging.getLogger("uvicorn")
 router = APIRouter()
 
 
@@ -69,13 +71,14 @@ def trends():
 
 
 @router.post("/copywriter")
-@limiter.limit("5/minute")
+@limiter.limit("1/minute")
 def copywriter(request: Request, req: CopywriterRequest):
     """POST /api/copywriter — PUBLIC.
     
     Generates promotional copy using Gemini AI.
     Falls back to a string-interpolation template if Gemini fails.
     """
+    logger.info("[ENDPOINT_HIT] copywriter called")
     return generate_copy(req)
 
 
