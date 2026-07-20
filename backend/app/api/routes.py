@@ -12,7 +12,7 @@ from ..services.financial_service import calculate_hpp, calculate_margin, calcul
 from ..services.validator_service import validate_business_idea
 from ..services.trend_service import get_viral_trends
 from ..services.copywriter_service import generate_copy
-from ..core.rate_limit import limiter
+from ..core.rate_limit import copywriter_limiter
 
 logger = logging.getLogger("uvicorn")
 router = APIRouter()
@@ -70,8 +70,7 @@ def trends():
     return get_viral_trends()
 
 
-@router.post("/copywriter")
-@limiter.limit("1/minute")
+@router.post("/copywriter", dependencies=[Depends(copywriter_limiter)])
 def copywriter(request: Request, req: CopywriterRequest):
     """POST /api/copywriter — PUBLIC.
     

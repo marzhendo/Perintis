@@ -10,12 +10,6 @@ from . import models  # noqa: F401 — import agar SQLAlchemy mendaftarkan semua
 
 app = FastAPI(title="Perintis API")
 
-from .core.rate_limit import limiter
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
-app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
-
 # ---------------------------------------------------------------------------
 # Inisialisasi database — create tables if not exist
 # ---------------------------------------------------------------------------
@@ -98,6 +92,8 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         code = "UNAUTHORIZED"
     elif exc.status_code == 404:
         code = "NOT_FOUND"
+    elif exc.status_code == 429:
+        code = "RATE_LIMITED"
     else:
         code = "INTERNAL_ERROR"
     return JSONResponse(
@@ -120,14 +116,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=422,
         content={"message": message, "code": "VALIDATION_ERROR"},
-    )
-
-
-@app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    return JSONResponse(
-        status_code=429,
-        content={"message": "Terlalu banyak permintaan. Silakan coba lagi nanti.", "code": "RATE_LIMITED"},
     )
 
 

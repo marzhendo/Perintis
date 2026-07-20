@@ -18,11 +18,9 @@ from ..dependencies.auth import get_current_user
 from ..models.user import User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-from ..core.rate_limit import limiter
+from ..core.rate_limit import register_limiter, login_limiter, forgot_password_limiter, reset_password_limiter
 
-
-@router.post("/register", response_model=AuthResponse, status_code=201)
-@limiter.limit("3/minute")
+@router.post("/register", response_model=AuthResponse, status_code=201, dependencies=[Depends(register_limiter)])
 def register(request: Request, data: UserRegister, db: Session = Depends(get_db)):
     # Cek email belum terdaftar
     if auth_service.get_user_by_email(db, data.email):
@@ -39,8 +37,7 @@ def register(request: Request, data: UserRegister, db: Session = Depends(get_db)
     )
 
 
-@router.post("/login", response_model=AuthResponse)
-@limiter.limit("5/minute")
+@router.post("/login", response_model=AuthResponse, dependencies=[Depends(login_limiter)])
 def login(request: Request, data: UserLogin, db: Session = Depends(get_db)):
     user = auth_service.authenticate_user(db, data.email, data.password)
     if not user:
@@ -72,8 +69,7 @@ def change_password(data: ChangePasswordRequest, db: Session = Depends(get_db), 
     return {"message": "Password berhasil diubah"}
 
 
-@router.post("/forgot-password")
-@limiter.limit("5/minute")
+@router.post("/forgot-password", dependencies=[Depends(forgot_password_limiter)])
 def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session = Depends(get_db)):
     from datetime import datetime, timedelta, timezone
     from ..models.otp_verification import OTPVerification
@@ -130,8 +126,7 @@ def forgot_password(request: Request, data: ForgotPasswordRequest, db: Session =
     return response_data
 
 
-@router.post("/reset-password")
-@limiter.limit("5/minute")
+@router.post("/reset-password", dependencies=[Depends(reset_password_limiter)])
 def reset_password(request: Request, data: ResetPasswordRequest, db: Session = Depends(get_db)):
     from datetime import datetime, timezone
     from ..models.otp_verification import OTPVerification
