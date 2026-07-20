@@ -32,7 +32,7 @@ class SimpleRateLimiter:
         self.history[client_ip].append(now)
 
 # Rate limiters
-copywriter_limiter = SimpleRateLimiter(max_requests=1, window_seconds=60) # Temporary 1/min
+copywriter_limiter = SimpleRateLimiter(max_requests=5, window_seconds=60)
 register_limiter = SimpleRateLimiter(max_requests=3, window_seconds=60)
 login_limiter = SimpleRateLimiter(max_requests=5, window_seconds=60)
 forgot_password_limiter = SimpleRateLimiter(max_requests=5, window_seconds=60)
