@@ -13,6 +13,7 @@ vi.mock('react-leaflet', () => ({
   useMap: () => ({
     setView: vi.fn(),
   }),
+  useMapEvents: vi.fn(),
 }));
 
 vi.mock('leaflet', () => {

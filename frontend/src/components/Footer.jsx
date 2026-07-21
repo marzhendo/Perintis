@@ -48,6 +48,11 @@ export default function Footer({ setActiveTab }) {
               </button>
             </li>
             <li>
+              <button onClick={() => setActiveTab('blog')} className="text-[#171C38]/70 hover:text-[#FF6B1A] transition-colors text-xs font-medium press">
+                Blog UMKM
+              </button>
+            </li>
+            <li>
               <button onClick={() => setActiveTab('notifikasi')} className="text-[#171C38]/70 hover:text-[#FF6B1A] transition-colors text-xs font-medium press">
                 Notifikasi
               </button>

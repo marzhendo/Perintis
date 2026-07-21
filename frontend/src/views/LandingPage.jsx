@@ -390,7 +390,7 @@ export default function LandingPage({ setActiveTab }) {
 
       {/* REAL-TIME NOTIFICATION POPUP (Bottom-Left) — Inspired by dicoding.com/asah */}
       {showNotif && currentNotif && !isDismissed && (
-        <div className="fixed bottom-6 left-6 z-50 bg-[#FAF6EE]/95 backdrop-blur-md border border-[#FF6B1A]/20 rounded-full px-4 py-2 shadow-lg shadow-orange-500/5 flex items-center gap-2.5 animate-slide-up text-[10px] font-semibold text-[#171C38] max-w-sm">
+        <div className="fixed bottom-24 lg:bottom-6 left-6 z-50 bg-[#FAF6EE]/95 backdrop-blur-md border border-[#FF6B1A]/20 rounded-full px-4 py-2 shadow-lg shadow-orange-500/5 flex items-center gap-2.5 animate-slide-up text-[10px] font-semibold text-[#171C38] max-w-sm">
           <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B1A] animate-ping flex-shrink-0" />
           <span className="truncate">
             <span className="font-bold text-[#FF6B1A]">{currentNotif.name}</span>{' '}
@@ -407,7 +407,7 @@ export default function LandingPage({ setActiveTab }) {
       )}
 
       {/* WHATSAPP SUPPORT WIDGET (Bottom-Right) — Inspired by dicoding.com/asah */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+      <div className="fixed bottom-24 lg:bottom-6 right-6 z-50 flex flex-col items-end gap-2">
         {chatOpen && (
           <div className="bg-[#FAF6EE]/95 backdrop-blur-md border border-[#FF6B1A]/30 rounded-2xl p-4 shadow-2xl max-w-xs text-left animate-scale-in mb-2">
             <div className="flex justify-between items-center mb-2">

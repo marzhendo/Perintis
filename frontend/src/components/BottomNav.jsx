@@ -8,7 +8,8 @@ import {
   TrendingUp,
   MapPin,
   Award,
-  Menu
+  Menu,
+  BookOpen
 } from 'lucide-react';
 
 export default function BottomNav({ activeTab, setActiveTab }) {
@@ -28,6 +29,7 @@ export default function BottomNav({ activeTab, setActiveTab }) {
     { id: 'lokasi', label: 'Lokasi Pasar', icon: MapPin, desc: 'Peta lokasi pasar terdekat' },
     { id: 'roi', label: 'Proyeksi ROI', icon: TrendingUp, desc: 'Analisis laba & modal usaha' },
     { id: 'legalitas', label: 'Legalitas', icon: Award, desc: 'Panduan sertifikasi ekspor' },
+    { id: 'blog', label: 'Blog & Edukasi', icon: BookOpen, desc: 'Tips keuangan & artikel bisnis' },
   ];
 
   const handlePrimaryClick = (id) => {

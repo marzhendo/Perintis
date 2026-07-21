@@ -129,6 +129,21 @@ export default function Header({ activeTab, setActiveTab, user, unreadCount, onO
         >
           Forum
         </button>
+
+        {/* Blog Tab */}
+        <button
+          onClick={() => {
+            setActiveTab('blog');
+            setDropdownOpen(false);
+          }}
+          className={`font-bold text-[10px] xl:text-xs whitespace-nowrap transition-all duration-300 px-3.5 py-1.5 rounded-full active:scale-90 focus-ring cursor-pointer ${
+            activeTab === 'blog'
+              ? 'text-white bg-[#FF6B1A] border border-[#FF6B1A] shadow-[0_4px_12px_rgba(255,107,26,0.25)]'
+              : 'text-[#171C38] hover:text-[#FF6B1A] hover:bg-[#FF6B1A]/5 border border-transparent'
+          }`}
+        >
+          Blog
+        </button>
       </div>
 
       {/* Right side */}

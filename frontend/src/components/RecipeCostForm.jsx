@@ -115,75 +115,148 @@ export default function RecipeCostForm() {
             {/* List Rows */}
             <div className="space-y-3.5">
               {ingredients.map((ing) => (
-                <div key={ing.id} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center bg-[#171C38]/5 p-3 rounded-xl border border-[#E8E8E8]">
-                  {/* Select Commodity or Input Custom Name */}
-                  <div className="sm:col-span-4 space-y-1">
-                    <select
-                      value={COMMON_COMMODITIES.some(c => c.name === ing.name) ? ing.name : 'custom'}
-                      onChange={(e) => {
-                        if (e.target.value === 'custom') {
-                          handleUpdateIngredient(ing.id, 'name', 'Bahan Lain');
-                        } else {
-                          handleSelectPredefined(ing.id, e.target.value);
-                        }
-                      }}
-                      className="w-full bg-white border border-[#E8E8E8] rounded-lg py-1 px-1.5 text-[11px] font-bold text-[#6F7178]"
-                      style={{ colorScheme: 'light' }}
-                    >
-                      <option value="custom">✏️ Custom Bahan...</option>
-                      {COMMON_COMMODITIES.map(c => (
-                        <option key={c.name} value={c.name}>{c.name}</option>
-                      ))}
-                    </select>
-                    {(!COMMON_COMMODITIES.some(c => c.name === ing.name)) && (
+                <div key={ing.id}>
+                  {/* Mobile Layout (Card-based, compact) */}
+                  <div className="sm:hidden bg-[#171C38]/5 p-4 rounded-xl border border-[#E8E8E8] space-y-3 text-left">
+                    <div className="flex gap-2 items-start justify-between">
+                      <div className="flex-1 space-y-1.5 min-w-0">
+                        <select
+                          value={COMMON_COMMODITIES.some(c => c.name === ing.name) ? ing.name : 'custom'}
+                          onChange={(e) => {
+                            if (e.target.value === 'custom') {
+                              handleUpdateIngredient(ing.id, 'name', 'Bahan Lain');
+                            } else {
+                              handleSelectPredefined(ing.id, e.target.value);
+                            }
+                          }}
+                          className="w-full bg-white border border-[#E8E8E8] rounded-lg py-1.5 px-2 text-xs font-bold text-[#171C38] focus:border-[#FF6B1A] focus:outline-none"
+                          style={{ colorScheme: 'light' }}
+                        >
+                          <option value="custom">✏️ Custom Bahan...</option>
+                          {COMMON_COMMODITIES.map(c => (
+                            <option key={c.name} value={c.name}>{c.name}</option>
+                          ))}
+                        </select>
+                        {(!COMMON_COMMODITIES.some(c => c.name === ing.name)) && (
+                          <input
+                            type="text"
+                            value={ing.name}
+                            onChange={(e) => handleUpdateIngredient(ing.id, 'name', e.target.value)}
+                            className="w-full bg-white border border-[#E8E8E8] focus:border-[#FF6B1A] focus:outline-none rounded-lg py-1.5 px-2 text-xs font-semibold text-[#171C38]"
+                            placeholder="Nama Bahan"
+                          />
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleRemoveIngredient(ing.id)}
+                        className="text-rose-500 hover:bg-rose-50 p-2 rounded-lg border border-transparent hover:border-rose-100 transition-all cursor-pointer flex-shrink-0"
+                        title="Hapus"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-12 gap-2.5 items-center">
+                      <div className="col-span-4 flex items-center gap-1">
+                        <input
+                          type="number"
+                          value={ing.qty}
+                          onChange={(e) => handleUpdateIngredient(ing.id, 'qty', e.target.value)}
+                          className="w-full bg-white border border-[#E8E8E8] focus:border-[#FF6B1A] focus:outline-none rounded-lg py-1 px-1.5 text-xs font-semibold text-[#171C38] text-center min-w-0"
+                          placeholder="Qty"
+                          step="any"
+                        />
+                        <span className="text-[10px] font-bold text-[#6F7178]">{ing.unit}</span>
+                      </div>
+                      
+                      <div className="col-span-5 relative">
+                        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#6F7178]">Rp</span>
+                        <input
+                          type="number"
+                          value={ing.costPerUnit}
+                          onChange={(e) => handleUpdateIngredient(ing.id, 'costPerUnit', e.target.value)}
+                          className="w-full bg-white border border-[#E8E8E8] focus:border-[#FF6B1A] focus:outline-none rounded-lg py-1 pl-6 pr-1 text-xs font-semibold text-[#171C38] min-w-0"
+                          placeholder="Harga"
+                        />
+                      </div>
+
+                      <div className="col-span-3 text-right font-sans">
+                        <span className="text-xs font-extrabold text-[#171C38] block truncate">{formatRupiah(ing.qty * ing.costPerUnit)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Desktop Layout (Spreadsheet-style, horizontal row) */}
+                  <div className="hidden sm:grid grid-cols-12 gap-3 items-center bg-[#171C38]/5 p-3 rounded-xl border border-[#E8E8E8]">
+                    {/* Select Commodity or Input Custom Name */}
+                    <div className="col-span-4 space-y-1">
+                      <select
+                        value={COMMON_COMMODITIES.some(c => c.name === ing.name) ? ing.name : 'custom'}
+                        onChange={(e) => {
+                          if (e.target.value === 'custom') {
+                            handleUpdateIngredient(ing.id, 'name', 'Bahan Lain');
+                          } else {
+                            handleSelectPredefined(ing.id, e.target.value);
+                          }
+                        }}
+                        className="w-full bg-white border border-[#E8E8E8] rounded-lg py-1 px-1.5 text-[11px] font-bold text-[#6F7178]"
+                        style={{ colorScheme: 'light' }}
+                      >
+                        <option value="custom">✏️ Custom Bahan...</option>
+                        {COMMON_COMMODITIES.map(c => (
+                          <option key={c.name} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                      {(!COMMON_COMMODITIES.some(c => c.name === ing.name)) && (
+                        <input
+                          type="text"
+                          value={ing.name}
+                          onChange={(e) => handleUpdateIngredient(ing.id, 'name', e.target.value)}
+                          className="w-full bg-white border border-[#E8E8E8] rounded-lg py-1 px-2 text-[10px] font-semibold text-[#171C38] mt-1"
+                          placeholder="Nama Bahan"
+                        />
+                      )}
+                    </div>
+
+                    {/* Quantity */}
+                    <div className="col-span-2 flex gap-1 items-center">
                       <input
-                        type="text"
-                        value={ing.name}
-                        onChange={(e) => handleUpdateIngredient(ing.id, 'name', e.target.value)}
-                        className="w-full bg-white border border-[#E8E8E8] rounded-lg py-1 px-2 text-[10px] font-semibold text-[#171C38] mt-1"
-                        placeholder="Nama Bahan"
+                        type="number"
+                        value={ing.qty}
+                        onChange={(e) => handleUpdateIngredient(ing.id, 'qty', e.target.value)}
+                        className="w-full bg-white border border-[#E8E8E8] rounded-lg py-1 px-2 text-[10px] font-semibold text-[#171C38] text-center"
+                        placeholder="Qty"
+                        step="any"
                       />
-                    )}
-                  </div>
+                      <span className="text-[10px] font-bold text-[#6F7178]">{ing.unit}</span>
+                    </div>
 
-                  {/* Quantity */}
-                  <div className="sm:col-span-2 flex gap-1 items-center">
-                    <input
-                      type="number"
-                      value={ing.qty}
-                      onChange={(e) => handleUpdateIngredient(ing.id, 'qty', e.target.value)}
-                      className="w-full bg-white border border-[#E8E8E8] rounded-lg py-1 px-2 text-[10px] font-semibold text-[#171C38] text-center"
-                      placeholder="Qty"
-                      step="any"
-                    />
-                    <span className="text-[10px] font-bold text-[#6F7178]">{ing.unit}</span>
-                  </div>
+                    {/* Price per unit */}
+                    <div className="col-span-3 relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#6F7178]">Rp</span>
+                      <input
+                        type="number"
+                        value={ing.costPerUnit}
+                        onChange={(e) => handleUpdateIngredient(ing.id, 'costPerUnit', e.target.value)}
+                        className="w-full bg-white border border-[#E8E8E8] rounded-lg py-1 pl-7 pr-1 text-[10px] font-semibold text-[#171C38]"
+                        placeholder="Harga/Unit"
+                      />
+                    </div>
 
-                  {/* Price per unit */}
-                  <div className="sm:col-span-3 relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#6F7178]">Rp</span>
-                    <input
-                      type="number"
-                      value={ing.costPerUnit}
-                      onChange={(e) => handleUpdateIngredient(ing.id, 'costPerUnit', e.target.value)}
-                      className="w-full bg-white border border-[#E8E8E8] rounded-lg py-1 pl-7 pr-1 text-[10px] font-semibold text-[#171C38]"
-                      placeholder="Harga/Unit"
-                    />
-                  </div>
+                    {/* Total Cost of Ingredient */}
+                    <div className="col-span-2 text-right">
+                      <span className="text-[10px] font-bold text-[#171C38]">{formatRupiah(ing.qty * ing.costPerUnit)}</span>
+                    </div>
 
-                  {/* Total Cost of Ingredient */}
-                  <div className="sm:col-span-2 text-right">
-                    <span className="text-[10px] font-bold text-[#171C38]">{formatRupiah(ing.qty * ing.costPerUnit)}</span>
-                  </div>
-
-                  {/* Delete button */}
-                  <div className="sm:col-span-1 text-center">
-                    <button
-                      onClick={() => handleRemoveIngredient(ing.id)}
-                      className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg border border-transparent hover:border-rose-100 transition-all press-sm cursor-pointer"
-                    >
-                      <Trash className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Delete button */}
+                    <div className="col-span-1 text-center">
+                      <button
+                        onClick={() => handleRemoveIngredient(ing.id)}
+                        className="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg border border-transparent hover:border-rose-100 transition-all press-sm cursor-pointer"
+                      >
+                        <Trash className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

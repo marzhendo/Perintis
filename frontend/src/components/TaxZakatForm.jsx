@@ -12,6 +12,7 @@ export default function TaxZakatForm() {
   const [liabilities, setLiabilities] = useState('');
   const [annualRevenueEstimate, setAnnualRevenueEstimate] = useState('0'); // Estimasi Omzet Setahun untuk threshold Rp 500 juta
   const [showResults, setShowResults] = useState(false);
+  const [showTaxTooltip, setShowTaxTooltip] = useState(false);
 
   const handleParamChange = (setter, value) => {
     // Batasi input maksimal 12 digit (999 Miliar Rupiah) untuk mencegah layout pecah/overflow
@@ -122,9 +123,22 @@ export default function TaxZakatForm() {
             {/* Input Estimasi Omzet Tahunan (Hanya jika WP OP) */}
             {isWpOp && (
               <div className="space-y-1.5 animate-slide-up">
-                <label className="block text-xs font-bold text-[#171C38] flex items-center gap-1.5">
+                <label className="block text-xs font-bold text-[#171C38] flex items-center gap-1.5 relative">
                   <span>Proyeksi Omzet Setahun (Rp)</span>
-                  <HelpCircle className="w-3.5 h-3.5 text-[#6F7178]" title="Digunakan untuk mengukur batas bebas pajak Rp 500 Juta setahun." />
+                  <button
+                    type="button"
+                    onClick={() => setShowTaxTooltip(!showTaxTooltip)}
+                    onBlur={() => setTimeout(() => setShowTaxTooltip(false), 200)}
+                    className="text-[#6F7178] hover:text-[#FF6B1A] transition-colors focus:outline-none cursor-pointer"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                  </button>
+                  {showTaxTooltip && (
+                    <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-[#171C38] text-white text-[10px] font-semibold rounded-xl shadow-xl z-50 animate-fade-in leading-relaxed normal-case">
+                      <div className="absolute left-4 bottom-[-4px] w-2 h-2 bg-[#171C38] rotate-45" />
+                      Digunakan untuk mengukur batas bebas pajak Rp 500 Juta setahun bagi wajib pajak orang pribadi (WP OP) UMKM.
+                    </div>
+                  )}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#6F7178]">Rp</span>

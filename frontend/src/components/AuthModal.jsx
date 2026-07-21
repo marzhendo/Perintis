@@ -81,6 +81,10 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
+    } else {
+      resetForm();
+      setMode('login');
+      setSuccessMessage('');
     }
   }, [isOpen, mode]);
 

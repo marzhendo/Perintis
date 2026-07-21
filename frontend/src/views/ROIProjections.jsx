@@ -494,7 +494,7 @@ export default function ROIProjections({ calculationData }) {
       <div className="absolute top-40 right-0 w-72 h-72 bg-[#FF6B1A]/5 rounded-full blur-3xl -z-10 animate-float" />
 
       {/* Recharts Break-Even Chart */}
-      <div className="glass-card rounded-[20px] p-6 space-y-4 shadow-lg shadow-orange-500/5 w-full">
+      <div className="glass-card rounded-[20px] p-6 space-y-4 shadow-lg shadow-orange-500/5 w-full min-w-0 overflow-hidden">
         <div>
           <h3 className="text-base font-bold text-[#171C38] font-sans">Simulasi Break-Even Point (BEP)</h3>
           <p className="text-xs text-[#6F7178] leading-normal mt-0.5">Representasi grafis perpotongan garis pendapatan kumulatif dan pengeluaran kumulatif.</p>
@@ -502,9 +502,9 @@ export default function ROIProjections({ calculationData }) {
         
         <div className="w-full h-80 pt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+            <LineChart data={data} margin={{ top: 10, right: 30, left: 35, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(23, 28, 56, 0.05)" />
-              <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} tickLine={false} />
+              <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} tickLine={false} interval={typeof window !== 'undefined' && window.innerWidth < 768 ? 4 : 2} />
               <YAxis 
                 stroke="#94a3b8" 
                 fontSize={10} 

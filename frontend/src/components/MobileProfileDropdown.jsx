@@ -28,16 +28,16 @@ export default function MobileProfileDropdown({ user, onLogout, onNavigate }) {
             <p className="text-[10px] text-[#6F7178] truncate mt-0.5">{user.email}</p>
           </div>
           <div className="py-1">
-            <button onClick={() => { setOpen(false); onNavigate('profile'); }} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[#6F7178] hover:text-[#171C38] hover:bg-[#171C38]/5 transition-colors">
-              <User className="w-4 h-4 text-[#6F7178]" />
+            <button onClick={() => { setOpen(false); onNavigate('profile'); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-[#6F7178] hover:text-[#171C38] hover:bg-[#171C38]/5 transition-colors cursor-pointer">
+              <User className="w-4.5 h-4.5 text-[#6F7178]" />
               <span>Profil Saya</span>
             </button>
-            <button onClick={() => { setOpen(false); onNavigate('notifikasi'); }} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[#6F7178] hover:text-[#171C38] hover:bg-[#171C38]/5 transition-colors">
-              <Bell className="w-4 h-4 text-[#6F7178]" />
+            <button onClick={() => { setOpen(false); onNavigate('notifikasi'); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-[#6F7178] hover:text-[#171C38] hover:bg-[#171C38]/5 transition-colors cursor-pointer">
+              <Bell className="w-4.5 h-4.5 text-[#6F7178]" />
               <span>Notifikasi</span>
             </button>
-            <button onClick={() => { setOpen(false); onLogout(); }} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-400 hover:bg-rose-500/10 transition-colors mt-1">
-              <LogOut className="w-4 h-4" />
+            <button onClick={() => { setOpen(false); onLogout(); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold text-rose-500 hover:bg-rose-500/10 transition-colors mt-1 cursor-pointer">
+              <LogOut className="w-4.5 h-4.5" />
               <span>Keluar Akun</span>
             </button>
           </div>

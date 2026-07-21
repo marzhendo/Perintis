@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MessageSquare, ThumbsUp, Plus, Search, MessageCircle, User, ArrowLeft, X } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Plus, Search, MessageCircle, User, ArrowLeft, X, Edit2, Trash2, Flag } from 'lucide-react';
 import { fetchApi } from '../services/apiClient';
 
 export default function ForumTerbuka({ user, onOpenAuth }) {
@@ -10,6 +10,9 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
   const [activeThread, setActiveThread] = useState(null);
   const [newComment, setNewComment] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingThread, setEditingThread] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
   
   const [newThreadForm, setNewThreadForm] = useState({
     title: '',
@@ -28,6 +31,7 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
           id: t.id,
           title: t.title,
           author: t.author.name,
+          authorId: t.author.id,
           authorBadge: t.author.badge,
           category: t.category,
           date: new Date(t.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -35,6 +39,7 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
           likes: t.likes_count,
           repliesCount: t.comments_count,
           is_liked: t.is_liked_by_me,
+          report_count: t.report_count || 0,
           replies: [] // will fetch on open
         })));
       })
@@ -49,9 +54,11 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
       const mappedComments = comments.map(c => ({
         id: c.id,
         author: c.author.name,
+        authorId: c.author.id,
         badge: c.author.badge,
         text: c.content,
-        date: new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+        date: new Date(c.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        report_count: c.report_count || 0
       }));
       setActiveThread(prev => prev && prev.id === thread.id ? { ...prev, replies: mappedComments } : prev);
       setThreads(prev => prev.map(t => t.id === thread.id ? { ...t, replies: mappedComments } : t));
@@ -62,7 +69,7 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
 
   const filteredThreads = threads.filter((t) => {
     const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase()) || 
-                          t.snippet.toLowerCase().includes(search.toLowerCase());
+                           t.snippet.toLowerCase().includes(search.toLowerCase());
     const matchesCat = category === 'Semua' || t.category === category;
     return matchesSearch && matchesCat;
   });
@@ -104,9 +111,11 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
       const newReply = {
         id: res.id,
         author: res.author.name,
+        authorId: res.author.id,
         badge: res.author.badge,
         text: res.content,
-        date: new Date(res.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+        date: new Date(res.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        report_count: 0
       };
       
       const updatedThreads = threads.map((t) => {
@@ -132,40 +141,157 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
     }
   };
 
-  const handleCreateThread = async (e) => {
+  const handleSaveThread = async (e) => {
     e.preventDefault();
     if (!user) return onOpenAuth();
     if (!newThreadForm.title.trim() || !newThreadForm.snippet.trim()) return;
 
     try {
-      const res = await fetchApi('/api/forum/threads', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: newThreadForm.title,
-          category: newThreadForm.category,
-          content: newThreadForm.snippet
-        })
-      });
+      if (editingThread) {
+        // Edit Thread
+        const res = await fetchApi(`/api/forum/threads/${editingThread.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title: newThreadForm.title,
+            category: newThreadForm.category,
+            content: newThreadForm.snippet
+          })
+        });
+        
+        const updatedThreads = threads.map(t => t.id === editingThread.id ? { 
+          ...t, 
+          title: res.title, 
+          category: res.category, 
+          snippet: res.content 
+        } : t);
+        
+        setThreads(updatedThreads);
+        if (activeThread && activeThread.id === editingThread.id) {
+          setActiveThread(prev => ({ 
+            ...prev, 
+            title: res.title, 
+            category: res.category, 
+            snippet: res.content 
+          }));
+        }
+      } else {
+        // Create Thread
+        const res = await fetchApi('/api/forum/threads', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: newThreadForm.title,
+            category: newThreadForm.category,
+            content: newThreadForm.snippet
+          })
+        });
 
-      const newThread = {
-        id: res.id,
-        title: res.title,
-        author: res.author.name,
-        authorBadge: res.author.badge,
-        category: res.category,
-        date: 'Baru Saja',
-        snippet: res.content,
-        likes: 0,
-        repliesCount: 0,
-        is_liked: false,
-        replies: []
-      };
+        const newThread = {
+          id: res.id,
+          title: res.title,
+          author: res.author.name,
+          authorId: res.author.id,
+          authorBadge: res.author.badge,
+          category: res.category,
+          date: 'Baru Saja',
+          snippet: res.content,
+          likes: 0,
+          repliesCount: 0,
+          is_liked: false,
+          report_count: 0,
+          replies: []
+        };
 
-      setThreads([newThread, ...threads]);
+        setThreads([newThread, ...threads]);
+      }
       setModalOpen(false);
+      setEditingThread(null);
       setNewThreadForm({ title: '', category: 'Kuliner', snippet: '' });
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDeleteThread = async (threadId, e) => {
+    if (e) e.stopPropagation();
+    if (!confirm('Apakah Anda yakin ingin menghapus diskusi ini?')) return;
+    try {
+      await fetchApi(`/api/forum/threads/${threadId}`, { method: 'DELETE' });
+      setThreads(threads.filter(t => t.id !== threadId));
+      if (activeThread && activeThread.id === threadId) {
+        setActiveThread(null);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal menghapus diskusi: ' + (err.message || 'Terjadi kesalahan pada server'));
+    }
+  };
+
+  const handleReportThread = async (threadId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      await fetchApi(`/api/forum/threads/${threadId}/report`, { method: 'POST' });
+      alert('Terima kasih. Diskusi ini telah dilaporkan kepada admin.');
+      setThreads(threads.map(t => t.id === threadId ? { ...t, report_count: (t.report_count || 0) + 1 } : t));
+      if (activeThread && activeThread.id === threadId) {
+        setActiveThread(prev => ({ ...prev, report_count: (prev.report_count || 0) + 1 }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEditComment = (reply) => {
+    setEditingCommentId(reply.id);
+    setEditCommentText(reply.text);
+  };
+
+  const handleSaveComment = async (commentId) => {
+    if (!editCommentText.trim()) return;
+    try {
+      const res = await fetchApi(`/api/forum/comments/${commentId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ content: editCommentText })
+      });
+      
+      const updatedReplies = activeThread.replies.map(r => r.id === commentId ? { ...r, text: res.content } : r);
+      setActiveThread(prev => ({ ...prev, replies: updatedReplies }));
+      setThreads(threads.map(t => t.id === activeThread.id ? { ...t, replies: updatedReplies } : t));
+      setEditingCommentId(null);
+      setEditCommentText('');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus tanggapan ini?')) return;
+    try {
+      await fetchApi(`/api/forum/comments/${commentId}`, { method: 'DELETE' });
+      const updatedReplies = activeThread.replies.filter(r => r.id !== commentId);
+      setActiveThread(prev => ({ 
+        ...prev, 
+        replies: updatedReplies,
+        repliesCount: prev.repliesCount - 1
+      }));
+      setThreads(threads.map(t => t.id === activeThread.id ? { 
+        ...t, 
+        replies: updatedReplies,
+        repliesCount: t.repliesCount - 1
+      } : t));
+    } catch (err) {
+      console.error(err);
+      alert('Gagal menghapus tanggapan: ' + (err.message || 'Terjadi kesalahan pada server'));
+    }
+  };
+
+  const handleReportComment = async (commentId) => {
+    try {
+      await fetchApi(`/api/forum/comments/${commentId}/report`, { method: 'POST' });
+      alert('Terima kasih. Tanggapan ini telah dilaporkan kepada admin.');
+      const updatedReplies = activeThread.replies.map(r => r.id === commentId ? { ...r, report_count: (r.report_count || 0) + 1 } : r);
+      setActiveThread(prev => ({ ...prev, replies: updatedReplies }));
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -212,14 +338,53 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
                   <User className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-sm text-[#171C38]">{activeThread.author}</span>
                     <span className="text-[9px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-2 py-0.5 rounded-full uppercase border border-[#FF6B1A]/20">{activeThread.authorBadge}</span>
+                    {user && user.role === 'admin' && activeThread.report_count > 0 && (
+                      <span className="text-[8px] font-extrabold text-rose-500 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">⚠️ Dilaporkan {activeThread.report_count}x</span>
+                    )}
                   </div>
                   <span className="text-[10px] text-[#6F7178] font-semibold">{activeThread.date}</span>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-[#6F7178] bg-[#171C38]/5 border border-[#FF6B1A]/20 px-3 py-1 rounded-full">{activeThread.category}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-[#6F7178] bg-[#171C38]/5 border border-[#FF6B1A]/20 px-3 py-1 rounded-full">{activeThread.category}</span>
+                
+                {user && user.id === activeThread.authorId && (
+                  <button
+                    onClick={() => {
+                      setEditingThread(activeThread);
+                      setNewThreadForm({ title: activeThread.title, category: activeThread.category, snippet: activeThread.snippet });
+                      setModalOpen(true);
+                    }}
+                    className="p-1 text-[#6F7178] hover:text-[#FF6B1A] transition-colors cursor-pointer"
+                    title="Edit Diskusi"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                
+                {user && (user.id === activeThread.authorId || user.role === 'admin') && (
+                  <button
+                    onClick={() => handleDeleteThread(activeThread.id)}
+                    className="p-1 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                    title="Hapus Diskusi"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+
+                {user && user.id !== activeThread.authorId && (
+                  <button
+                    onClick={() => handleReportThread(activeThread.id)}
+                    className="p-1 text-slate-400 hover:text-amber-500 transition-colors cursor-pointer"
+                    title="Laporkan Diskusi"
+                  >
+                    <Flag className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Thread Title & Content */}
@@ -253,13 +418,75 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
                 <div className="w-8 h-8 rounded-full bg-[#171C38]/5 flex items-center justify-center text-[#6F7178] border border-[#FF6B1A]/10 flex-shrink-0">
                   <User className="w-4 h-4" />
                 </div>
-                <div className="space-y-1.5 flex-grow">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-1.5 flex-grow min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-xs text-[#171C38]">{reply.author}</span>
                     <span className="text-[8px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-2 py-0.5 rounded-full uppercase">{reply.badge}</span>
+                    {user && user.role === 'admin' && reply.report_count > 0 && (
+                      <span className="text-[8px] font-extrabold text-rose-500 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">⚠️ Dilaporkan {reply.report_count}x</span>
+                    )}
                     <span className="text-[10px] text-[#6F7178] ml-auto">{reply.date}</span>
+
+                    {/* Comment action buttons */}
+                    <div className="flex items-center gap-1.5 ml-2">
+                      {user && user.id === reply.authorId && editingCommentId !== reply.id && (
+                        <button
+                          onClick={() => handleEditComment(reply)}
+                          className="p-0.5 text-slate-400 hover:text-[#FF6B1A] transition-colors cursor-pointer"
+                          title="Edit Tanggapan"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      
+                      {user && (user.id === reply.authorId || user.role === 'admin') && (
+                        <button
+                          onClick={() => handleDeleteComment(reply.id)}
+                          className="p-0.5 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                          title="Hapus Tanggapan"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+
+                      {user && user.id !== reply.authorId && (
+                        <button
+                          onClick={() => handleReportComment(reply.id)}
+                          className="p-0.5 text-slate-400 hover:text-amber-500 transition-colors cursor-pointer"
+                          title="Laporkan Tanggapan"
+                        >
+                          <Flag className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs text-[#6F7178] leading-relaxed font-medium">{reply.text}</p>
+
+                  {editingCommentId === reply.id ? (
+                    <div className="space-y-2 mt-2">
+                      <textarea
+                        value={editCommentText}
+                        onChange={(e) => setEditCommentText(e.target.value)}
+                        className="w-full bg-[#171C38]/5 border border-[#FF6B1A]/20 focus:outline-none focus:border-[#FF6B1A] rounded-xl p-3 text-xs font-semibold text-[#171C38] resize-none"
+                        rows="3"
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => setEditingCommentId(null)}
+                          className="px-3 py-1.5 rounded-lg border border-[#E8E8E8] text-[#6F7178] hover:text-[#171C38] text-[10px] font-bold cursor-pointer"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          onClick={() => handleSaveComment(reply.id)}
+                          className="px-3 py-1.5 rounded-lg bg-[#FF6B1A] hover:bg-[#FF8A3D] text-white text-[10px] font-bold cursor-pointer"
+                        >
+                          Simpan
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#6F7178] leading-relaxed font-medium">{reply.text}</p>
+                  )}
                 </div>
               </div>
             ))}
@@ -275,7 +502,7 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
               />
               <button 
                 onClick={handleAddComment}
-                className="cyber-btn text-xs px-5 py-3 rounded-xl"
+                className="cyber-btn text-xs px-5 py-3 rounded-xl cursor-pointer"
               >
                 Kirim
               </button>
@@ -326,16 +553,56 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
               <div 
                 key={thread.id}
                 onClick={() => handleOpenThread(thread)}
-                className="glass-card rounded-[20px] p-6 cursor-pointer flex flex-col gap-4 text-left w-full group card-lift animate-slide-up shadow-lg shadow-orange-500/5"
+                className="glass-card rounded-[20px] p-6 cursor-pointer flex flex-col gap-4 text-left w-full group card-lift animate-slide-up shadow-lg shadow-orange-500/5 border border-transparent hover:border-[#FF6B1A]/10"
                 style={{ animationDelay: `${Math.min((i + 1) * 0.1, 0.8)}s` }}
               >
                 <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-xs text-[#171C38]">{thread.author}</span>
                     <span className="text-[9px] font-bold text-[#FF6B1A] bg-[#FF6B1A]/10 px-2 py-0.5 rounded-full">{thread.authorBadge}</span>
                     <span className="text-[10px] text-[#6F7178] font-semibold ml-2">{thread.date}</span>
+                    {user && user.role === 'admin' && thread.report_count > 0 && (
+                      <span className="text-[8px] font-extrabold text-rose-500 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full animate-pulse-soft">⚠️ Dilaporkan {thread.report_count}x</span>
+                    )}
                   </div>
-                  <span className="text-[10px] font-bold text-[#6F7178] bg-[#171C38]/5 border border-[#FF6B1A]/20 px-2.5 py-0.5 rounded-full">{thread.category}</span>
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <span className="text-[10px] font-bold text-[#6F7178] bg-[#171C38]/5 border border-[#FF6B1A]/20 px-2.5 py-0.5 rounded-full">{thread.category}</span>
+                    
+                    {user && user.id === thread.authorId && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingThread(thread);
+                          setNewThreadForm({ title: thread.title, category: thread.category, snippet: thread.snippet });
+                          setModalOpen(true);
+                        }}
+                        className="p-1 text-slate-400 hover:text-[#FF6B1A] transition-colors cursor-pointer"
+                        title="Edit Diskusi"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    
+                    {user && (user.id === thread.authorId || user.role === 'admin') && (
+                      <button
+                        onClick={(e) => handleDeleteThread(thread.id, e)}
+                        className="p-1 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                        title="Hapus Diskusi"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {user && user.id !== thread.authorId && (
+                      <button
+                        onClick={(e) => handleReportThread(thread.id, e)}
+                        className="p-1 text-slate-400 hover:text-amber-500 transition-colors cursor-pointer"
+                        title="Laporkan Diskusi"
+                      >
+                        <Flag className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -370,21 +637,25 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
         </div>
       )}
 
-      {/* CREATE THREAD MODAL */}
+      {/* CREATE/EDIT THREAD MODAL */}
       {modalOpen && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#171C38]/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-[24px] w-full max-w-lg animate-scale-in text-left p-6 md:p-8 shadow-[0_8px_32px_rgba(23,28,56,0.12)] border border-[#FF6B1A]/20">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-[#171C38]">Mulai Diskusi Baru</h3>
+              <h3 className="text-lg font-bold text-[#171C38]">{editingThread ? 'Ubah Diskusi' : 'Mulai Diskusi Baru'}</h3>
               <button 
-                onClick={() => setModalOpen(false)}
-                className="text-[#6F7178] hover:text-[#171C38] p-1 rounded-full hover:bg-[#171C38]/10 transition-colors"
+                onClick={() => {
+                  setModalOpen(false);
+                  setEditingThread(null);
+                  setNewThreadForm({ title: '', category: 'Kuliner', snippet: '' });
+                }}
+                className="text-[#6F7178] hover:text-[#171C38] p-1 rounded-full hover:bg-[#171C38]/10 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateThread} className="space-y-4">
+            <form onSubmit={handleSaveThread} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#6F7178] mb-1.5">Judul Diskusi</label>
                 <input 
@@ -425,9 +696,9 @@ export default function ForumTerbuka({ user, onOpenAuth }) {
 
               <button
                 type="submit"
-                className="w-full cyber-btn text-xs py-3.5 rounded-xl mt-2"
+                className="w-full cyber-btn text-xs py-3.5 rounded-xl mt-2 cursor-pointer"
               >
-                Publikasikan Topik Diskusi
+                {editingThread ? 'Simpan Perubahan' : 'Publikasikan Topik Diskusi'}
               </button>
             </form>
           </div>
