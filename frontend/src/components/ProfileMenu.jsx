@@ -32,7 +32,7 @@ export default function ProfileMenu({ user, onLogout, onOpenAuth, onNavigate, un
     );
   }
 
-  const initials = user.name
+  const initials = (user?.name || 'User')
     .split(' ')
     .map(n => n[0])
     .join('')

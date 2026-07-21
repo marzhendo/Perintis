@@ -11,7 +11,7 @@ export default function MobileProfileDropdown({ user, onLogout, onNavigate }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  const initials = (user?.name || 'User').split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
 
   return (
     <div ref={ref} className="relative">
