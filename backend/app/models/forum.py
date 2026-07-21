@@ -12,6 +12,7 @@ class ForumThread(Base):
     title = Column(String, nullable=False)
     category = Column(String, nullable=False)
     content = Column(String, nullable=False)
+    report_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User")
@@ -24,6 +25,7 @@ class ForumComment(Base):
     thread_id = Column(Integer, ForeignKey("forum_threads.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(String, nullable=False)
+    report_count = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User")

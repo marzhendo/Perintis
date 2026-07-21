@@ -10,6 +10,7 @@ class ForumThreadCreate(BaseModel):
     content: str = Field(..., max_length=2000)
 
 class AuthorInfo(BaseModel):
+    id: int
     name: str
     badge: str
 
@@ -23,6 +24,7 @@ class ForumThreadResponse(BaseModel):
     comments_count: int
     likes_count: int
     is_liked_by_me: bool = False  # Dinamis jika user login
+    report_count: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -34,6 +36,7 @@ class ForumCommentResponse(BaseModel):
     content: str
     created_at: datetime
     author: AuthorInfo
+    report_count: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -77,3 +80,18 @@ class ProfileUpdateRequest(BaseModel):
     name: str | None = Field(None, max_length=100)
     phone: str | None = Field(None, max_length=20)
     bio: str | None = Field(None, max_length=500)
+
+# --- Blog Schemas ---
+
+class BlogPostCreate(BaseModel):
+    title: str = Field(..., max_length=200)
+    content: str = Field(..., max_length=10000)
+
+class BlogPostResponse(BaseModel):
+    id: int
+    title: str
+    content: str
+    created_at: datetime
+    author: AuthorInfo
+
+    model_config = {"from_attributes": True}

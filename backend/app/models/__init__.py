@@ -3,5 +3,6 @@ from .forum import ForumThread, ForumComment, ForumLike
 from .notification import Notification
 from .activity import UserActivity
 from .otp_verification import OTPVerification
+from .blog import BlogPost
 
-__all__ = ["User", "ForumThread", "ForumComment", "ForumLike", "Notification", "UserActivity", "OTPVerification"]
+__all__ = ["User", "ForumThread", "ForumComment", "ForumLike", "Notification", "UserActivity", "OTPVerification", "BlogPost"]

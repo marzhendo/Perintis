@@ -5,6 +5,7 @@ from .api.auth_routes import router as auth_router
 from .api.forum_routes import router as forum_router
 from .api.notification_routes import router as notification_router
 from .api.profile_routes import router as profile_routes
+from .api.blog_routes import router as blog_router
 from .database import engine, Base
 from . import models  # noqa: F401 — import agar SQLAlchemy mendaftarkan semua model sebelum create_all
 
@@ -82,6 +83,7 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(forum_router, prefix="/api")
 app.include_router(notification_router, prefix="/api")
 app.include_router(profile_routes, prefix="/api")
+app.include_router(blog_router, prefix="/api")
 
 
 @app.exception_handler(StarletteHTTPException)

@@ -59,3 +59,58 @@ def get_comment_count(db: Session, thread_id: int) -> int:
 
 def is_liked_by_user(db: Session, thread_id: int, user_id: int) -> bool:
     return db.query(ForumLike).filter(ForumLike.thread_id == thread_id, ForumLike.user_id == user_id).first() is not None
+
+def edit_thread(db: Session, thread_id: int, title: str, category: str, content: str):
+    thread = db.query(ForumThread).filter(ForumThread.id == thread_id).first()
+    if thread:
+        thread.title = title
+        thread.category = category
+        thread.content = content
+        db.commit()
+        db.refresh(thread)
+    return thread
+
+def delete_thread(db: Session, thread_id: int):
+    thread = db.query(ForumThread).filter(ForumThread.id == thread_id).first()
+    if thread:
+        db.query(ForumLike).filter(ForumLike.thread_id == thread_id).delete()
+        db.query(ForumComment).filter(ForumComment.thread_id == thread_id).delete()
+        db.delete(thread)
+        db.commit()
+        return True
+    return False
+
+def get_comment_by_id(db: Session, comment_id: int):
+    return db.query(ForumComment).filter(ForumComment.id == comment_id).first()
+
+def edit_comment(db: Session, comment_id: int, content: str):
+    comment = db.query(ForumComment).filter(ForumComment.id == comment_id).first()
+    if comment:
+        comment.content = content
+        db.commit()
+        db.refresh(comment)
+    return comment
+
+def delete_comment(db: Session, comment_id: int):
+    comment = db.query(ForumComment).filter(ForumComment.id == comment_id).first()
+    if comment:
+        db.delete(comment)
+        db.commit()
+        return True
+    return False
+
+def report_thread(db: Session, thread_id: int):
+    thread = db.query(ForumThread).filter(ForumThread.id == thread_id).first()
+    if thread:
+        thread.report_count = (thread.report_count or 0) + 1
+        db.commit()
+        db.refresh(thread)
+    return thread
+
+def report_comment(db: Session, comment_id: int):
+    comment = db.query(ForumComment).filter(ForumComment.id == comment_id).first()
+    if comment:
+        comment.report_count = (comment.report_count or 0) + 1
+        db.commit()
+        db.refresh(comment)
+    return comment

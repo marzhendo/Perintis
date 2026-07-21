@@ -36,3 +36,6 @@ backend/test_auth.py
 backend/test_fase2_errors.py
 backend/app/data/commodity_prices.json
 backend/app/data/trends_cache.json
+
+# Google Cloud SDK
+google-cloud-sdk/

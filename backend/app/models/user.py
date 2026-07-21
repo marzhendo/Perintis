@@ -13,4 +13,5 @@ class User(Base):
     phone = Column(String, nullable=True)
     bio = Column(String, nullable=True)
     firebase_uid = Column(String, unique=True, index=True, nullable=True)
+    role = Column(String, default="user", nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)

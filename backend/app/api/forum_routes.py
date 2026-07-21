@@ -21,7 +21,7 @@ def _build_author_info(db: Session, user: User) -> AuthorInfo:
     created_at_naive = user.created_at.replace(tzinfo=None) if user.created_at else now_naive
     hari_aktif = (now_naive - created_at_naive).days + 1
     badge = activity_service.determine_author_badge(act_count, hari_aktif)
-    return AuthorInfo(name=user.name, badge=badge)
+    return AuthorInfo(id=user.id, name=user.name, badge=badge)
 
 @router.get("/threads", response_model=list[ForumThreadResponse])
 def get_threads(db: Session = Depends(get_db), current_user: User | None = Depends(get_current_user_optional)):
@@ -44,7 +44,8 @@ def get_threads(db: Session = Depends(get_db), current_user: User | None = Depen
             author=author_info,
             comments_count=comments_count,
             likes_count=likes_count,
-            is_liked_by_me=is_liked
+            is_liked_by_me=is_liked,
+            report_count=t.report_count or 0
         ))
     return result
 
@@ -63,7 +64,8 @@ def create_thread(data: ForumThreadCreate, db: Session = Depends(get_db), curren
         author=author_info,
         comments_count=0,
         likes_count=0,
-        is_liked_by_me=False
+        is_liked_by_me=False,
+        report_count=0
     )
 
 @router.get("/threads/{thread_id}/comments", response_model=list[ForumCommentResponse])
@@ -80,7 +82,8 @@ def get_comments(thread_id: int, db: Session = Depends(get_db)):
             id=c.id,
             content=c.content,
             created_at=c.created_at,
-            author=author_info
+            author=author_info,
+            report_count=c.report_count or 0
         ))
     return result
 
@@ -106,7 +109,8 @@ def create_comment(thread_id: int, data: ForumCommentCreate, db: Session = Depen
         id=c.id,
         content=c.content,
         created_at=c.created_at,
-        author=author_info
+        author=author_info,
+        report_count=0
     )
 
 @router.post("/threads/{thread_id}/like")
@@ -125,3 +129,88 @@ def toggle_like(thread_id: int, db: Session = Depends(get_db), current_user: Use
         )
         
     return {"status": "success", "is_liked": liked}
+
+@router.put("/threads/{thread_id}", response_model=ForumThreadResponse)
+def edit_thread_route(thread_id: int, data: ForumThreadCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    t = forum_service.get_thread_by_id(db, thread_id)
+    if not t:
+        raise HTTPException(status_code=404, detail="Thread tidak ditemukan")
+    if t.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda tidak diizinkan mengubah thread ini")
+    
+    updated_t = forum_service.edit_thread(db, thread_id, data.title, data.category, data.content)
+    author_info = _build_author_info(db, current_user)
+    comments_count = forum_service.get_comment_count(db, thread_id)
+    likes_count = forum_service.get_like_count(db, thread_id)
+    is_liked = forum_service.is_liked_by_user(db, thread_id, current_user.id)
+    
+    return ForumThreadResponse(
+        id=updated_t.id,
+        title=updated_t.title,
+        category=updated_t.category,
+        content=updated_t.content,
+        created_at=updated_t.created_at,
+        author=author_info,
+        comments_count=comments_count,
+        likes_count=likes_count,
+        is_liked_by_me=is_liked,
+        report_count=updated_t.report_count or 0
+    )
+
+@router.delete("/threads/{thread_id}")
+def delete_thread_route(thread_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    t = forum_service.get_thread_by_id(db, thread_id)
+    if not t:
+        raise HTTPException(status_code=404, detail="Thread tidak ditemukan")
+    if t.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Anda tidak diizinkan menghapus thread ini")
+    
+    forum_service.delete_thread(db, thread_id)
+    return {"status": "success", "message": "Thread berhasil dihapus"}
+
+@router.put("/comments/{comment_id}", response_model=ForumCommentResponse)
+def edit_comment_route(comment_id: int, data: ForumCommentCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    c = forum_service.get_comment_by_id(db, comment_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="Komentar tidak ditemukan")
+    if c.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Anda tidak diizinkan mengubah komentar ini")
+    
+    updated_c = forum_service.edit_comment(db, comment_id, data.content)
+    author_info = _build_author_info(db, current_user)
+    return ForumCommentResponse(
+        id=updated_c.id,
+        content=updated_c.content,
+        created_at=updated_c.created_at,
+        author=author_info,
+        report_count=updated_c.report_count or 0
+    )
+
+@router.delete("/comments/{comment_id}")
+def delete_comment_route(comment_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    c = forum_service.get_comment_by_id(db, comment_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="Komentar tidak ditemukan")
+    if c.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Anda tidak diizinkan menghapus komentar ini")
+    
+    forum_service.delete_comment(db, comment_id)
+    return {"status": "success", "message": "Komentar berhasil dihapus"}
+
+@router.post("/threads/{thread_id}/report")
+def report_thread_route(thread_id: int, db: Session = Depends(get_db)):
+    t = forum_service.get_thread_by_id(db, thread_id)
+    if not t:
+        raise HTTPException(status_code=404, detail="Thread tidak ditemukan")
+    
+    forum_service.report_thread(db, thread_id)
+    return {"status": "success", "message": "Thread berhasil dilaporkan"}
+
+@router.post("/comments/{comment_id}/report")
+def report_comment_route(comment_id: int, db: Session = Depends(get_db)):
+    c = forum_service.get_comment_by_id(db, comment_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="Komentar tidak ditemukan")
+    
+    forum_service.report_comment(db, comment_id)
+    return {"status": "success", "message": "Komentar berhasil dilaporkan"}
