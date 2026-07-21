@@ -88,8 +88,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     }
   }, [isOpen, mode]);
 
-  if (!isOpen) return null;
-
   const resetForm = () => {
     setForm({
       name: '',
@@ -245,6 +243,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
   const inputClass = (key) =>
     `w-full bg-[#171C38]/5 border ${errors[key] ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-[#FF6B1A]/20 focus:border-[#FF6B1A] focus:ring-[#FF6B1A]/10'} focus:outline-none focus:ring-2 rounded-[18px] py-2.5 pl-10 pr-10 text-xs font-semibold text-[#171C38] placeholder:text-[#6F7178] transition-all focus-ring`;
+
+  if (!isOpen) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#171C38]/85 backdrop-blur-sm animate-fade-in">
