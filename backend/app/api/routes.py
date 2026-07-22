@@ -12,7 +12,7 @@ from ..services.financial_service import calculate_hpp, calculate_margin, calcul
 from ..services.validator_service import validate_business_idea
 from ..services.trend_service import get_viral_trends
 from ..services.copywriter_service import generate_copy
-from ..core.rate_limit import copywriter_limiter
+from ..core.rate_limit import copywriter_limiter, validate_limiter
 
 logger = logging.getLogger("uvicorn")
 router = APIRouter()
@@ -48,7 +48,7 @@ def calculate(req: CalculateRequest, db: Session = Depends(get_db), current_user
     }
 
 
-@router.post("/validate")
+@router.post("/validate", dependencies=[Depends(validate_limiter)])
 def validate(req: ValidateRequest, db: Session = Depends(get_db), current_user: User | None = Depends(get_current_user_optional)):
     result = validate_business_idea(req)
     if current_user:
