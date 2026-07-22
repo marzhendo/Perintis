@@ -33,6 +33,7 @@ class SimpleRateLimiter:
 
 # Rate limiters
 copywriter_limiter = SimpleRateLimiter(max_requests=5, window_seconds=60)
+validate_limiter = SimpleRateLimiter(max_requests=5, window_seconds=60)
 register_limiter = SimpleRateLimiter(max_requests=3, window_seconds=60)
 login_limiter = SimpleRateLimiter(max_requests=5, window_seconds=60)
 forgot_password_limiter = SimpleRateLimiter(max_requests=5, window_seconds=60)
